@@ -1,0 +1,10 @@
+[package]
+name = "f-plus-plus-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fpp"
+path = "src/main.rs"
+
+[dependencies]
