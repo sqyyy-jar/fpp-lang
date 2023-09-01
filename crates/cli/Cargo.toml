@@ -1,5 +1,5 @@
 [package]
-name = "f-plus-plus-cli"
+name = "fpp-cli"
 version = "0.1.0"
 edition = "2021"
 

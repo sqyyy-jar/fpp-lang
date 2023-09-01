@@ -24,33 +24,33 @@ impl Lexer {
     }
 
     /// Get the current char
-    pub fn get(&self) -> u8 {
+    fn get(&self) -> u8 {
         self.source.get(self.index).copied().unwrap_or(NULL)
     }
 
     /// Get the next char
-    pub fn peek(&self) -> u8 {
+    fn peek(&self) -> u8 {
         self.source.get(self.index + 1).copied().unwrap_or(NULL)
     }
 
     /// Increment the current index
-    pub fn advance(&mut self) {
+    fn advance(&mut self) {
         self.index += 1;
     }
 
     /// Quote the symbol
-    pub fn quote(&mut self, value: Symbol, start: usize) -> Result<Q<Symbol>> {
+    fn quote(&mut self, value: Symbol, start: usize) -> Result<Q<Symbol>> {
         Ok(Q::new(value, start, self.index))
     }
 
     /// Advance and quote the symbol afterwards
-    pub fn quote_next(&mut self, value: Symbol, start: usize) -> Result<Q<Symbol>> {
+    fn quote_next(&mut self, value: Symbol, start: usize) -> Result<Q<Symbol>> {
         self.advance();
         self.quote(value, start)
     }
 
     /// Create an error with the given reason
-    pub fn error(&self, reason: Reason, start: usize) -> Result<Q<Symbol>> {
+    fn error(&self, reason: Reason, start: usize) -> Result<Q<Symbol>> {
         Err(Error::new(
             self.source.clone(),
             Quote::new(start, self.index),
@@ -59,7 +59,7 @@ impl Lexer {
     }
 
     /// Advance and create an error with the given reason afterwards
-    pub fn error_next(&mut self, reason: Reason, start: usize) -> Result<Q<Symbol>> {
+    fn error_next(&mut self, reason: Reason, start: usize) -> Result<Q<Symbol>> {
         self.advance();
         self.error(reason, start)
     }
@@ -74,6 +74,12 @@ impl Lexer {
             if matches!(c, b'\n' | b'\r') {
                 break;
             }
+        }
+    }
+
+    fn skip_whitespace(&mut self) {
+        while self.get().is_ascii_whitespace() {
+            self.advance();
         }
     }
 
@@ -97,25 +103,37 @@ impl Lexer {
         self.quote(Symbol::Identifier, start_index)
     }
 
-    fn read_symbol(&mut self) -> Result<Q<Symbol>> {
-        let start_index = self.index;
-        let c = self.get();
-        if c == NULL {
-            return Ok(Q::new(Symbol::Null, start_index, self.index));
-        }
-        match c {
-            b';' => self.quote_next(Symbol::Semicolon, start_index),
-            b'=' => self.quote_next(Symbol::Equal, start_index),
-            b'.' => self.quote_next(Symbol::Punct, start_index),
-            b'(' => self.quote_next(Symbol::LeftParen, start_index),
-            b')' => self.quote_next(Symbol::RightParen, start_index),
-            b'!' => self.quote_next(Symbol::Not, start_index),
-            b'&' => self.quote_next(Symbol::And, start_index),
-            b'|' => self.quote_next(Symbol::Or, start_index),
-            b'^' => self.quote_next(Symbol::Xor, start_index),
-            b'0'..=b'9' => self.read_number(),
-            b'_' | b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(),
-            _ => self.error_next(Reason::UnexpectedCharacter, start_index),
+    pub fn read_symbol(&mut self) -> Result<Q<Symbol>> {
+        loop {
+            self.skip_whitespace();
+            let start_index = self.index;
+            return match self.get() {
+                NULL => Ok(Q::new(Symbol::Null, start_index, self.index)),
+                b';' => self.quote_next(Symbol::Semicolon, start_index),
+                b'=' => self.quote_next(Symbol::Equal, start_index),
+                b'.' => self.quote_next(Symbol::Punct, start_index),
+                b',' => self.quote_next(Symbol::Comma, start_index),
+                b'(' => self.quote_next(Symbol::LeftParen, start_index),
+                b')' => self.quote_next(Symbol::RightParen, start_index),
+                b'!' => self.quote_next(Symbol::Not, start_index),
+                b'&' => self.quote_next(Symbol::And, start_index),
+                b'|' => self.quote_next(Symbol::Or, start_index),
+                b'^' => self.quote_next(Symbol::Xor, start_index),
+                b'0'..=b'9' => self.read_number(),
+                b'_' | b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(),
+                b'#' => {
+                    self.skip_line();
+                    continue;
+                }
+                b'/' => {
+                    if self.peek() != b'/' {
+                        return self.error_next(Reason::UnexpectedCharacter, start_index);
+                    }
+                    self.skip_line();
+                    continue;
+                }
+                _ => self.error_next(Reason::UnexpectedCharacter, start_index),
+            };
         }
     }
 }

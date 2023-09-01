@@ -9,7 +9,7 @@ pub const KEYWORDS: Map<&[u8], Symbol> = phf_map! {
 };
 
 /// A part of the parsed source
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Symbol {
     // --- Punctuation ---
     /// `;`
@@ -18,6 +18,8 @@ pub enum Symbol {
     Equal,
     /// `.`
     Punct,
+    /// `,`
+    Comma,
     /// `(`
     LeftParen,
     /// `)`

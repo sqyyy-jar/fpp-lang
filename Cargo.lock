@@ -3,11 +3,11 @@
 version = 3
 
 [[package]]
-name = "f-plus-plus-cli"
+name = "fpp-cli"
 version = "0.1.0"
 
 [[package]]
-name = "f-plus-plus-compiler"
+name = "fpp-compiler"
 version = "0.1.0"
 dependencies = [
  "phf",

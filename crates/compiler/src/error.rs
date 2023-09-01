@@ -22,4 +22,5 @@ impl Error {
 
 pub enum Reason {
     UnexpectedCharacter,
+    UnexpectedSymbol,
 }
