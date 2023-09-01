@@ -1,6 +1,8 @@
 use crate::util::Quote;
 
 pub enum HirValue {
+    Number(HirNumber),
+    Bool(HirBool),
     Not(Box<HirNot>),
     And(Box<HirAnd>),
     Or(Box<HirOr>),
@@ -9,6 +11,33 @@ pub enum HirValue {
     Output(HirOutput),
     Variable(HirVariable),
     Call(HirCall),
+}
+
+impl HirValue {
+    pub fn quote(&self) -> Quote {
+        match self {
+            HirValue::Number(number) => number.quote.clone(),
+            HirValue::Bool(bool) => bool.quote.clone(),
+            HirValue::Not(not) => not.quote.clone(),
+            HirValue::And(and) => and.quote.clone(),
+            HirValue::Or(or) => or.quote.clone(),
+            HirValue::Xor(xor) => xor.quote.clone(),
+            HirValue::Input(input) => input.quote.clone(),
+            HirValue::Output(output) => output.quote.clone(),
+            HirValue::Variable(variable) => variable.quote.clone(),
+            HirValue::Call(call) => call.quote.clone(),
+        }
+    }
+}
+
+/// `true`, `false`
+pub struct HirBool {
+    pub quote: Quote,
+    pub value: bool,
+}
+
+pub struct HirNumber {
+    pub quote: Quote,
 }
 
 /// `not value`, `!value`

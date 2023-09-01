@@ -27,6 +27,11 @@ impl Quote {
     pub fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }
+
+    /// Checks if two quotes are adjacent
+    pub fn adjacent(&self, other: &Self) -> bool {
+        self.end == other.start || self.start == other.end
+    }
 }
 
 impl Index<&Quote> for [u8] {

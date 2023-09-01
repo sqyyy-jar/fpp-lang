@@ -6,6 +6,8 @@ pub const KEYWORDS: Map<&[u8], Symbol> = phf_map! {
     b"and" => Symbol::And,
     b"or" => Symbol::Or,
     b"xor" => Symbol::Xor,
+    b"true" => Symbol::True,
+    b"false" => Symbol::False,
 };
 
 /// A part of the parsed source
@@ -35,9 +37,32 @@ pub enum Symbol {
     Or,
     /// `xor`, `^`
     Xor,
+    /// `true`
+    True,
+    /// `false`
+    False,
     // --- Literals ---
     Number,
     Identifier,
     // --- Special ---
     Null,
+}
+
+impl Symbol {
+    pub fn is_unary_op(self) -> bool {
+        matches!(self, Symbol::Not)
+    }
+
+    pub fn is_binary_op(self) -> bool {
+        matches!(self, Symbol::And | Symbol::Or | Symbol::Xor)
+    }
+
+    pub fn precedence(self) -> usize {
+        match self {
+            Symbol::And => 3,
+            Symbol::Xor => 2,
+            Symbol::Or => 1,
+            _ => panic!("Invalid binary op"),
+        }
+    }
 }
