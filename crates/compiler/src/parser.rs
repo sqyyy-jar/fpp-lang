@@ -3,12 +3,15 @@ use std::rc::Rc;
 use crate::{
     error::{Error, Reason, Result},
     hir::{
-        value::{HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirValue, HirVariable},
+        value::{
+            HirAddress, HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirOutput, HirValue,
+            HirVariable,
+        },
         Hir, HirLet, HirStatement, HirWrite,
     },
-    lexer::Lexer,
+    lexer::{Lexer, NULL},
     symbol::Symbol,
-    util::{Quote, Q},
+    util::{parse_number, Quote, Q},
 };
 
 pub struct Parser {
@@ -42,7 +45,9 @@ impl Parser {
 
     fn expect(&mut self, value: Symbol) -> Result<Quote> {
         if self.buffer.value == value {
-            return Ok(self.buffer.quote.clone());
+            let quote = self.buffer.quote.clone();
+            self.advance()?;
+            return Ok(quote);
         }
         self.error_buffer(Reason::UnexpectedSymbol)
     }
@@ -66,42 +71,60 @@ impl Parser {
 
 /// Parsing specific functions
 impl Parser {
-    /// Read input symbol (`E0.0`)
-    fn read_input_symbol(&mut self) -> Result<HirValue> {
-        let ident = self.expect(Symbol::Identifier)?;
-        let start = ident.start;
-        let slice = &self.source[&ident];
-        if slice != [self.opts.input_char] {
-            return self.error_buffer(Reason::InvalidInputSymbol);
+    fn parse_address_prefix(&self, prefix: &[u8], start: usize, end: usize) -> Result<(u8, usize)> {
+        if prefix.len() < 2 {
+            return self.error(Reason::InvalidAddressSymbol, start, end);
         }
-        let x = self.expect(Symbol::Number)?;
-        let punct = self.expect(Symbol::Punct)?;
-        let y = self.expect(Symbol::Number)?;
-        let end = y.end;
-        if !ident.adjacent(&x) || !x.adjacent(&punct) || !punct.adjacent(&y) {
-            return self.error(Reason::InvalidInputSymbol, start, end);
-        }
-        let quote = Quote { start, end };
-        Ok(HirValue::Input(HirInput { quote, x, y }))
+        let char = prefix[0];
+        let Ok(slice_x) = std::str::from_utf8(&prefix[1..]) else {
+            return self.error(Reason::InvalidAddressSymbol, start, end);
+        };
+        let Ok(x) = slice_x.parse() else {
+            return self.error(Reason::InvalidAddressSymbol, start, end);
+        };
+        Ok((char, x))
     }
 
-    /// Read output symbol (`A0.0`)
-    fn read_output_symbol(&mut self) -> Result<HirValue> {
-        let ident = self.expect(Symbol::Identifier)?;
-        let start = ident.start;
-        let slice = &self.source[&ident];
-        if slice != [self.opts.output_char] {
-            return self.error_buffer(Reason::InvalidOutputSymbol);
-        }
-        let x = self.expect(Symbol::Number)?;
-        let punct = self.expect(Symbol::Punct)?;
-        let y = self.expect(Symbol::Number)?;
-        let end = y.end;
-        if !ident.adjacent(&x) || !x.adjacent(&punct) || !punct.adjacent(&y) {
-            return self.error(Reason::InvalidOutputSymbol, start, end);
+    /// Read raw address (`0.0`)
+    fn read_raw_address(&mut self, q_x: Quote) -> Result<HirValue> {
+        let start = q_x.start;
+        let x = parse_number(&self.source[&q_x]);
+        let punct = self.buffer.quote.clone();
+        self.advance()?;
+        let q_y = self.expect(Symbol::Number)?;
+        let y = parse_number(&self.source[&q_y]);
+        let end = q_y.end;
+        if !q_x.adjacent(&punct) || !punct.adjacent(&q_y) {
+            return self.error(Reason::InvalidAddressSymbol, start, end);
         }
         let quote = Quote { start, end };
-        Ok(HirValue::Input(HirInput { quote, x, y }))
+        Ok(HirValue::Address(HirAddress {
+            quote,
+            char: NULL,
+            x,
+            y,
+        }))
+    }
+
+    /// Read prefixed address (`E0.0`)
+    fn read_prefixed_address(&mut self, prefix: Quote) -> Result<HirValue> {
+        let start = prefix.start;
+        let punct = self.expect(Symbol::Punct)?;
+        let q_y = self.expect(Symbol::Number)?;
+        let y = parse_number(&self.source[&q_y]);
+        let end = q_y.end;
+        if !prefix.adjacent(&punct) || !punct.adjacent(&q_y) {
+            return self.error(Reason::InvalidAddressSymbol, start, end);
+        }
+        let (char, x) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
+        let quote = Quote { start, end };
+        if self.opts.input_char == char {
+            return Ok(HirValue::Input(HirInput { quote, x, y }));
+        }
+        if self.opts.output_char == char {
+            return Ok(HirValue::Output(HirOutput { quote, x, y }));
+        }
+        Ok(HirValue::Address(HirAddress { quote, char, x, y }))
     }
 
     /// Read function call (`out(0.0)`)
@@ -145,24 +168,22 @@ impl Parser {
             }
             Symbol::Number => {
                 self.advance()?;
+                if self.buffer.value == Symbol::Punct {
+                    return self.read_raw_address(symbol.quote);
+                }
                 Ok(HirValue::Number(HirNumber {
                     quote: symbol.quote,
                 }))
             }
             Symbol::Identifier => {
-                let slice = &self.source[&symbol.quote];
-                if self.opts.input_symbols && slice == [self.opts.input_char] {
-                    return self.read_input_symbol();
-                } else if self.opts.output_symbols && slice == [self.opts.output_char] {
-                    return self.read_output_symbol();
-                }
                 self.advance()?;
-                if self.buffer.value == Symbol::LeftParen {
-                    return self.read_call(symbol.quote);
+                match self.buffer.value {
+                    Symbol::Punct => self.read_prefixed_address(symbol.quote),
+                    Symbol::LeftParen => self.read_call(symbol.quote),
+                    _ => Ok(HirValue::Variable(HirVariable {
+                        quote: symbol.quote,
+                    })),
                 }
-                Ok(HirValue::Variable(HirVariable {
-                    quote: symbol.quote,
-                }))
             }
             _ => self.error_buffer(Reason::InvalidUnaryOperation),
         }

@@ -36,6 +36,8 @@ impl Debug for Error {
 pub enum Reason {
     UnexpectedCharacter,
     UnexpectedSymbol,
+    InvalidNumber,
+    InvalidAddressSymbol,
     InvalidInputSymbol,
     InvalidOutputSymbol,
     InvalidUnaryOperation,

@@ -8,3 +8,4 @@ name = "fpp"
 path = "src/main.rs"
 
 [dependencies]
+fpp-compiler = { path = "../compiler" }
