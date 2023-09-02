@@ -88,6 +88,13 @@ impl Lexer {
         while self.get().is_ascii_digit() {
             self.advance();
         }
+        let slice = &self.source[start_index..self.index];
+        if unsafe { std::str::from_utf8_unchecked(slice) }
+            .parse::<usize>()
+            .is_err()
+        {
+            return self.error(Reason::InvalidNumber, start_index);
+        }
         self.quote(Symbol::Number, start_index)
     }
 
