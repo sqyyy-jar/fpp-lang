@@ -1,7 +1,19 @@
 use crate::util::Quote;
 
 #[derive(Debug)]
-pub enum HirValue {
+pub struct HirValue {
+    pub quote: Quote,
+    pub r#type: HirValueType,
+}
+
+impl HirValue {
+    pub fn new(quote: Quote, r#type: HirValueType) -> Self {
+        Self { quote, r#type }
+    }
+}
+
+#[derive(Debug)]
+pub enum HirValueType {
     Number(HirNumber),
     Bool(HirBool),
     Address(HirAddress),
@@ -15,39 +27,18 @@ pub enum HirValue {
     Call(HirCall),
 }
 
-impl HirValue {
-    pub fn quote(&self) -> Quote {
-        match self {
-            HirValue::Number(number) => number.quote.clone(),
-            HirValue::Bool(bool) => bool.quote.clone(),
-            HirValue::Address(address) => address.quote.clone(),
-            HirValue::Not(not) => not.quote.clone(),
-            HirValue::And(and) => and.quote.clone(),
-            HirValue::Or(or) => or.quote.clone(),
-            HirValue::Xor(xor) => xor.quote.clone(),
-            HirValue::Input(input) => input.quote.clone(),
-            HirValue::Output(output) => output.quote.clone(),
-            HirValue::Variable(variable) => variable.quote.clone(),
-            HirValue::Call(call) => call.quote.clone(),
-        }
-    }
-}
-
 /// `true`, `false`
 #[derive(Debug)]
 pub struct HirBool {
-    pub quote: Quote,
     pub value: bool,
 }
 
 #[derive(Debug)]
-pub struct HirNumber {
-    pub quote: Quote,
-}
+pub struct HirNumber;
 
+/// `charx.y`
 #[derive(Debug)]
 pub struct HirAddress {
-    pub quote: Quote,
     pub char: u8,
     pub x: usize,
     pub y: usize,
@@ -56,14 +47,12 @@ pub struct HirAddress {
 /// `not value`, `!value`
 #[derive(Debug)]
 pub struct HirNot {
-    pub quote: Quote,
     pub value: HirValue,
 }
 
 /// `left and right`, `left & right`
 #[derive(Debug)]
 pub struct HirAnd {
-    pub quote: Quote,
     pub left: HirValue,
     pub right: HirValue,
 }
@@ -71,7 +60,6 @@ pub struct HirAnd {
 /// `left or right`, `left | right`
 #[derive(Debug)]
 pub struct HirOr {
-    pub quote: Quote,
     pub left: HirValue,
     pub right: HirValue,
 }
@@ -79,7 +67,6 @@ pub struct HirOr {
 /// `left xor right`, `left ^ right`
 #[derive(Debug)]
 pub struct HirXor {
-    pub quote: Quote,
     pub left: HirValue,
     pub right: HirValue,
 }
@@ -87,7 +74,6 @@ pub struct HirXor {
 /// `Ex.y`
 #[derive(Debug)]
 pub struct HirInput {
-    pub quote: Quote,
     pub x: usize,
     pub y: usize,
 }
@@ -95,21 +81,17 @@ pub struct HirInput {
 /// `Ax.y`
 #[derive(Debug)]
 pub struct HirOutput {
-    pub quote: Quote,
     pub x: usize,
     pub y: usize,
 }
 
 /// `quote`
 #[derive(Debug)]
-pub struct HirVariable {
-    pub quote: Quote,
-}
+pub struct HirVariable;
 
 /// `name(args, ...)`
 #[derive(Debug)]
 pub struct HirCall {
-    pub quote: Quote,
     pub name: Quote,
     pub args: Vec<HirValue>,
 }

@@ -1,12 +1,24 @@
 pub mod value;
 
+use std::rc::Rc;
+
 use crate::util::Quote;
 
 use self::value::HirValue;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Hir {
+    pub source: Rc<[u8]>,
     pub statements: Vec<HirStatement>,
+}
+
+impl Hir {
+    pub fn new(source: Rc<[u8]>) -> Self {
+        Self {
+            source,
+            statements: Vec::new(),
+        }
+    }
 }
 
 #[derive(Debug)]

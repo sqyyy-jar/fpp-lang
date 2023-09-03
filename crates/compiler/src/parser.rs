@@ -5,7 +5,7 @@ use crate::{
     hir::{
         value::{
             HirAddress, HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirOutput, HirValue,
-            HirVariable,
+            HirValueType, HirVariable,
         },
         Hir, HirLet, HirStatement, HirWrite,
     },
@@ -98,12 +98,10 @@ impl Parser {
             return self.error(Reason::InvalidAddressSymbol, start, end);
         }
         let quote = Quote { start, end };
-        Ok(HirValue::Address(HirAddress {
+        Ok(HirValue::new(
             quote,
-            char: NULL,
-            x,
-            y,
-        }))
+            HirValueType::Address(HirAddress { char: NULL, x, y }),
+        ))
     }
 
     /// Read prefixed address (`E0.0`)
@@ -119,12 +117,18 @@ impl Parser {
         let (char, x) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
         let quote = Quote { start, end };
         if self.opts.input_char == char {
-            return Ok(HirValue::Input(HirInput { quote, x, y }));
+            return Ok(HirValue::new(quote, HirValueType::Input(HirInput { x, y })));
         }
         if self.opts.output_char == char {
-            return Ok(HirValue::Output(HirOutput { quote, x, y }));
+            return Ok(HirValue::new(
+                quote,
+                HirValueType::Output(HirOutput { x, y }),
+            ));
         }
-        Ok(HirValue::Address(HirAddress { quote, char, x, y }))
+        Ok(HirValue::new(
+            quote,
+            HirValueType::Address(HirAddress { char, x, y }),
+        ))
     }
 
     /// Read function call (`out(0.0)`)
@@ -141,7 +145,10 @@ impl Parser {
         }
         let end = self.expect(Symbol::RightParen)?.end;
         let quote = Quote { start, end };
-        Ok(HirValue::Call(HirCall { quote, name, args }))
+        Ok(HirValue::new(
+            quote,
+            HirValueType::Call(HirCall { name, args }),
+        ))
     }
 
     /// Read unary operation (`not value`)
@@ -161,28 +168,29 @@ impl Parser {
             }
             Symbol::True | Symbol::False => {
                 self.advance()?;
-                Ok(HirValue::Bool(HirBool {
-                    quote: symbol.quote,
-                    value: symbol.value == Symbol::True,
-                }))
+                Ok(HirValue::new(
+                    symbol.quote,
+                    HirValueType::Bool(HirBool {
+                        value: symbol.value == Symbol::True,
+                    }),
+                ))
             }
             Symbol::Number => {
                 self.advance()?;
                 if self.buffer.value == Symbol::Punct {
                     return self.read_raw_address(symbol.quote);
                 }
-                Ok(HirValue::Number(HirNumber {
-                    quote: symbol.quote,
-                }))
+                Ok(HirValue::new(symbol.quote, HirValueType::Number(HirNumber)))
             }
             Symbol::Identifier => {
                 self.advance()?;
                 match self.buffer.value {
                     Symbol::Punct => self.read_prefixed_address(symbol.quote),
                     Symbol::LeftParen => self.read_call(symbol.quote),
-                    _ => Ok(HirValue::Variable(HirVariable {
-                        quote: symbol.quote,
-                    })),
+                    _ => Ok(HirValue::new(
+                        symbol.quote,
+                        HirValueType::Variable(HirVariable),
+                    )),
                 }
             }
             _ => self.error_buffer(Reason::InvalidUnaryOperation),
@@ -235,7 +243,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Hir> {
-        let mut hir = Hir::default();
+        let mut hir = Hir::new(self.source.clone());
         self.advance()?;
         while self.buffer.value != Symbol::Null {
             hir.statements.push(match self.buffer.value {
@@ -267,19 +275,19 @@ impl Default for ParserOptions {
 }
 
 fn apply_unary(op: Q<Symbol>, value: HirValue) -> HirValue {
-    let quote = Quote::new(op.quote.start, value.quote().end);
+    let quote = Quote::new(op.quote.start, value.quote.end);
     match op.value {
-        Symbol::Not => HirValue::Not(Box::new(HirNot { quote, value })),
+        Symbol::Not => HirValue::new(quote, HirValueType::Not(Box::new(HirNot { value }))),
         _ => panic!("Invalid unary op"),
     }
 }
 
 fn apply_binary(op: Q<Symbol>, left: HirValue, right: HirValue) -> HirValue {
-    let quote = Quote::new(left.quote().start, right.quote().end);
+    let quote = Quote::new(left.quote.start, right.quote.end);
     match op.value {
-        Symbol::And => HirValue::And(Box::new(HirAnd { quote, left, right })),
-        Symbol::Or => HirValue::And(Box::new(HirAnd { quote, left, right })),
-        Symbol::Xor => HirValue::And(Box::new(HirAnd { quote, left, right })),
+        Symbol::And => HirValue::new(quote, HirValueType::And(Box::new(HirAnd { left, right }))),
+        Symbol::Or => HirValue::new(quote, HirValueType::And(Box::new(HirAnd { left, right }))),
+        Symbol::Xor => HirValue::new(quote, HirValueType::And(Box::new(HirAnd { left, right }))),
         _ => panic!("Invalid binary op"),
     }
 }
