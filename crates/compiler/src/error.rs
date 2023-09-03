@@ -34,11 +34,15 @@ impl Debug for Error {
 
 #[derive(Debug)]
 pub enum Reason {
+    // Lexer
     UnexpectedCharacter,
-    UnexpectedSymbol,
     InvalidNumber,
+    // Parser
+    UnexpectedSymbol,
     InvalidAddressSymbol,
     InvalidInputSymbol,
     InvalidOutputSymbol,
     InvalidUnaryOperation,
+    // Mir
+    NoWriteHandler,
 }
