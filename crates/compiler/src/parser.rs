@@ -1,3 +1,5 @@
+//! This module is responsible for parsing an [Hir] from a [Lexer].
+
 use std::rc::Rc;
 
 use crate::{
@@ -257,8 +259,6 @@ impl Parser {
 }
 
 pub struct ParserOptions {
-    pub input_symbols: bool,
-    pub output_symbols: bool,
     pub input_char: u8,
     pub output_char: u8,
 }
@@ -266,8 +266,6 @@ pub struct ParserOptions {
 impl Default for ParserOptions {
     fn default() -> Self {
         Self {
-            input_symbols: true,
-            output_symbols: true,
             input_char: b'E',
             output_char: b'A',
         }

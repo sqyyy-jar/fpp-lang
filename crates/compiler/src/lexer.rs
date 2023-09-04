@@ -1,3 +1,5 @@
+//! This module is responsible for parsing source code into a stream of [Symbol]s.
+
 use std::rc::Rc;
 
 use crate::{
