@@ -25,7 +25,7 @@ pub fn assert_readable(mir: &Mir, quote: &Quote, value: &MirValue) -> Result<()>
             quote.clone(),
             Reason::InvalidArgType,
         )),
-        MirValue::Variable(var) => assert_readable(mir, quote, &mir.variables[var.index].value),
+        MirValue::VarRef(var) => assert_readable(mir, quote, &mir.variables[var.index].value),
         MirValue::Not(not) => assert_readable(mir, quote, &not.value),
         MirValue::And(and) => {
             assert_readable(mir, quote, &and.left)?;

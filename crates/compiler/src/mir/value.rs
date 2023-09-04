@@ -13,7 +13,7 @@ pub enum MirValue {
     Bool(MirBool),
     Number(MirNumber),
     BitAddress(MirBitAddress),
-    Variable(MirVariable),
+    VarRef(MirVarRef),
     /// A series of operations expected to return a value
     Ops(Rc<MirOps>),
     Object(Rc<dyn MirObject>),
@@ -23,6 +23,38 @@ pub enum MirValue {
     Xor(Rc<MirXor>),
 }
 
+impl MirValue {
+    /// Handler for a write to a variable
+    ///
+    /// - `&mut Mir`: reference to the MIR
+    /// - `quote`: quote of the equals symbol
+    /// - `index`: index of the variable to be written to
+    /// - `value`: value written
+    pub fn write(
+        &mut self,
+        mir: &mut Mir,
+        quote: Quote,
+        index: usize,
+        value: MirValue,
+    ) -> Result<()> {
+        match self {
+            MirValue::BitAddress(addr) => addr.write(mir, quote, index, value),
+            MirValue::VarRef(var) => {
+                let mut var_value = mir.variables[var.index].value.clone();
+                var_value.write(mir, quote, index, value)?;
+                mir.variables[var.index].value = var_value;
+                Ok(())
+            }
+            MirValue::Object(object) => object.write(mir, quote, index, value),
+            _ => Err(Error::new(
+                mir.source.clone(),
+                quote,
+                Reason::NoWriteHandler,
+            )),
+        }
+    }
+}
+
 pub trait MirObject: Debug {
     /// Handler for a write to a variable
     ///
@@ -30,13 +62,7 @@ pub trait MirObject: Debug {
     /// - `quote`: quote of the equals symbol
     /// - `index`: index of the variable to be written to
     /// - `value`: value written
-    fn write(
-        &mut self,
-        mir: &mut Mir,
-        quote: Quote,
-        _index: usize,
-        _value: MirValue,
-    ) -> Result<()> {
+    fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, _value: MirValue) -> Result<()> {
         Err(Error::new(
             mir.source.clone(),
             quote,
@@ -71,13 +97,12 @@ pub struct MirBitAddress {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct MirVariable {
+pub struct MirVarRef {
     pub index: usize,
 }
 
-// todo
-impl MirObject for MirBitAddress {
-    fn write(
+impl MirBitAddress {
+    pub fn write(
         &mut self,
         mir: &mut Mir,
         quote: Quote,
@@ -95,7 +120,7 @@ impl MirObject for MirBitAddress {
             address: *self,
             instructions: vec![],
         }));
-        Ok(())
+        todo!();
     }
 }
 

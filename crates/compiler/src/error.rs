@@ -47,4 +47,5 @@ pub enum Reason {
     NoWriteHandler,
     InvalidArgsCount,
     InvalidArgType,
+    UnknownVariable,
 }

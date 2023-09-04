@@ -28,6 +28,18 @@ pub struct Mir {
     pub actions: Vec<MirAction>,
 }
 
+impl Mir {
+    pub fn new(source: Rc<[u8]>) -> Self {
+        Self {
+            source,
+            memory: MirMemory::default(),
+            variables: Vec::new(),
+            actions: Vec::new(),
+        }
+    }
+}
+
+#[derive(Default)]
 pub struct MirMemory {
     pub byte_index: usize,
     pub bit_index: u8,
@@ -50,6 +62,7 @@ impl MirMemory {
 }
 
 pub struct MirVariable {
+    pub name: Quote,
     pub value: MirValue,
 }
 
