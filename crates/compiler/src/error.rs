@@ -45,4 +45,6 @@ pub enum Reason {
     InvalidUnaryOperation,
     // Mir
     NoWriteHandler,
+    InvalidArgsCount,
+    InvalidArgType,
 }

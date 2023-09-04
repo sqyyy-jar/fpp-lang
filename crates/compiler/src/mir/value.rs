@@ -1,4 +1,4 @@
-use std::{any::Any, fmt::Debug};
+use std::{fmt::Debug, rc::Rc};
 
 use crate::{
     error::{Error, Reason, Result},
@@ -6,11 +6,24 @@ use crate::{
     util::Quote,
 };
 
-use super::Mir;
+use super::{ops::MirOp, Mir};
 
-pub type MirValueBox = Box<dyn MirValue>;
+#[derive(Clone, Debug)]
+pub enum MirValue {
+    Bool(MirBool),
+    Number(MirNumber),
+    BitAddress(MirBitAddress),
+    Variable(MirVariable),
+    /// A series of operations expected to return a value
+    Ops(Rc<MirOps>),
+    Object(Rc<dyn MirObject>),
+    Not(Rc<MirNot>),
+    And(Rc<MirAnd>),
+    Or(Rc<MirOr>),
+    Xor(Rc<MirXor>),
+}
 
-pub trait MirValue: Any + Debug {
+pub trait MirObject: Debug {
     /// Handler for a write to a variable
     ///
     /// - `&mut Mir`: reference to the MIR
@@ -22,7 +35,7 @@ pub trait MirValue: Any + Debug {
         mir: &mut Mir,
         quote: Quote,
         _index: usize,
-        _value: MirValueBox,
+        _value: MirValue,
     ) -> Result<()> {
         Err(Error::new(
             mir.source.clone(),
@@ -32,30 +45,15 @@ pub trait MirValue: Any + Debug {
     }
 }
 
-#[derive(Debug)]
-pub enum MirIncompleteValue {
-    Not(Box<MirNot>),
-    And(Box<MirAnd>),
-    Or(Box<MirOr>),
-    Xor(Box<MirXor>),
-    Variable(MirVariable),
-}
-
-impl MirValue for MirIncompleteValue {}
-
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct MirBool {
     pub value: bool,
 }
 
-impl MirValue for MirBool {}
-
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct MirNumber {
     pub value: usize,
 }
-
-impl MirValue for MirNumber {}
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -72,13 +70,19 @@ pub struct MirBitAddress {
     pub y: u8,
 }
 
-impl MirValue for MirBitAddress {
+#[derive(Clone, Copy, Debug)]
+pub struct MirVariable {
+    pub index: usize,
+}
+
+// todo
+impl MirObject for MirBitAddress {
     fn write(
         &mut self,
         mir: &mut Mir,
         quote: Quote,
         _index: usize,
-        _value: MirValueBox,
+        _value: MirValue,
     ) -> Result<()> {
         if self.r#type != MirBitAddressType::Output {
             return Err(Error::new(
@@ -96,29 +100,29 @@ impl MirValue for MirBitAddress {
 }
 
 #[derive(Debug)]
+pub struct MirOps {
+    pub ops: Vec<MirOp>,
+}
+
+#[derive(Debug)]
 pub struct MirNot {
-    pub value: MirValueBox,
+    pub value: MirValue,
 }
 
 #[derive(Debug)]
 pub struct MirAnd {
-    pub left: MirValueBox,
-    pub right: MirValueBox,
+    pub left: MirValue,
+    pub right: MirValue,
 }
 
 #[derive(Debug)]
 pub struct MirOr {
-    pub left: MirValueBox,
-    pub right: MirValueBox,
+    pub left: MirValue,
+    pub right: MirValue,
 }
 
 #[derive(Debug)]
 pub struct MirXor {
-    pub left: MirValueBox,
-    pub right: MirValueBox,
-}
-
-#[derive(Debug)]
-pub struct MirVariable {
-    pub index: usize,
+    pub left: MirValue,
+    pub right: MirValue,
 }
