@@ -14,12 +14,12 @@ use crate::{
 /// # RS-Flipflop
 ///
 /// **Signature:**
-/// ```
+/// ```rs
 /// fn(r_input, s_input) -> output
 /// ```
 ///
 /// **Idea:**
-/// ```
+/// ```rs
 /// output = rs(in1, in2);
 /// Ops[ResetBit[in2, m0], SetBit[in1, m0], And[m0]]
 /// ```
