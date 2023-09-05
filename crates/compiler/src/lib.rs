@@ -1,4 +1,3 @@
-pub mod compiler;
 pub mod error;
 pub mod hir;
 pub mod lexer;

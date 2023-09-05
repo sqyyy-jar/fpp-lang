@@ -8,6 +8,7 @@ use self::value::{MirBitAddress, MirValue};
 
 pub mod builtin;
 pub mod ops;
+pub mod transformer;
 pub mod value;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {

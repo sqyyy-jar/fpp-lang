@@ -1,4 +1,4 @@
-use fpp_compiler::{compiler::compile, parser::Parser};
+use fpp_compiler::{mir::transformer::transform, parser::Parser};
 
 const SRC: &[u8] = br#"
 let pos_auf = E0.5;
@@ -13,6 +13,6 @@ fn main() {
     let mut parser = Parser::new(SRC.into());
     let hir = parser.parse().expect("HIR");
     println!("{hir:#?}");
-    let mir = compile(hir);
+    let mir = transform(hir);
     println!("{mir:#?}");
 }

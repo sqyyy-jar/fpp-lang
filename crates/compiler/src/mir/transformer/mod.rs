@@ -8,10 +8,10 @@ use crate::{
     mir::{Mir, MirVariable},
 };
 
-use self::value::compile_value;
+use self::value::transform_value;
 
-fn compile_let(mir: &mut Mir, HirLet { name, value, .. }: HirLet) -> Result<()> {
-    let mir_value = compile_value(mir, value)?;
+fn transform_let(mir: &mut Mir, HirLet { name, value, .. }: HirLet) -> Result<()> {
+    let mir_value = transform_value(mir, value)?;
     mir.variables.push(MirVariable {
         name,
         value: mir_value,
@@ -19,7 +19,7 @@ fn compile_let(mir: &mut Mir, HirLet { name, value, .. }: HirLet) -> Result<()> 
     Ok(())
 }
 
-fn compile_write(mir: &mut Mir, HirWrite { quote, name, value }: HirWrite) -> Result<()> {
+fn transform_write(mir: &mut Mir, HirWrite { quote, name, value }: HirWrite) -> Result<()> {
     let write_name = &mir.source[&name];
     let Some(index) = mir.find_var(write_name) else {
         return Err(Error::new(
@@ -29,18 +29,18 @@ fn compile_write(mir: &mut Mir, HirWrite { quote, name, value }: HirWrite) -> Re
         ));
     };
     let var_value = mir.variables[index].value.clone();
-    let mir_value = compile_value(mir, value)?;
+    let mir_value = transform_value(mir, value)?;
     var_value.write(mir, quote, index, mir_value)?;
     mir.variables[index].value = var_value;
     Ok(())
 }
 
-pub fn compile(hir: Hir) -> Result<Mir> {
+pub fn transform(hir: Hir) -> Result<Mir> {
     let mut mir = Mir::new(hir.source.clone());
     for statement in hir.statements {
         match statement {
-            HirStatement::Let(stmt) => compile_let(&mut mir, stmt)?,
-            HirStatement::Write(write) => compile_write(&mut mir, write)?,
+            HirStatement::Let(stmt) => transform_let(&mut mir, stmt)?,
+            HirStatement::Write(write) => transform_write(&mut mir, write)?,
         }
     }
     Ok(mir)
