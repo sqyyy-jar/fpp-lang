@@ -23,7 +23,7 @@ pub enum HirValueType {
     Xor(Box<HirXor>),
     Input(HirInput),
     Output(HirOutput),
-    Variable(HirVariable),
+    VarRef(HirVarRef),
     Call(HirCall),
 }
 
@@ -34,7 +34,9 @@ pub struct HirBool {
 }
 
 #[derive(Debug)]
-pub struct HirNumber;
+pub struct HirNumber {
+    pub value: usize,
+}
 
 /// `charx.y`
 #[derive(Debug)]
@@ -87,7 +89,7 @@ pub struct HirOutput {
 
 /// `quote`
 #[derive(Debug)]
-pub struct HirVariable;
+pub struct HirVarRef;
 
 /// `name(args, ...)`
 #[derive(Debug)]

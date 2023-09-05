@@ -7,7 +7,7 @@ use crate::{
     hir::{
         value::{
             HirAddress, HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirOutput, HirValue,
-            HirValueType, HirVariable,
+            HirValueType, HirVarRef,
         },
         Hir, HirLet, HirStatement, HirWrite,
     },
@@ -90,11 +90,11 @@ impl Parser {
     /// Read raw address (`0.0`)
     fn read_raw_address(&mut self, q_x: Quote) -> Result<HirValue> {
         let start = q_x.start;
-        let x = parse_number(&self.source[&q_x]);
+        let x = parse_number(&self.source, &q_x)?;
         let punct = self.buffer.quote.clone();
         self.advance()?;
         let q_y = self.expect(Symbol::Number)?;
-        let y = parse_number(&self.source[&q_y]);
+        let y = parse_number(&self.source, &q_y)?;
         let end = q_y.end;
         if !q_x.adjacent(&punct) || !punct.adjacent(&q_y) {
             return self.error(Reason::InvalidAddressSymbol, start, end);
@@ -111,7 +111,7 @@ impl Parser {
         let start = prefix.start;
         let punct = self.expect(Symbol::Punct)?;
         let q_y = self.expect(Symbol::Number)?;
-        let y = parse_number(&self.source[&q_y]);
+        let y = parse_number(&self.source, &q_y)?;
         let end = q_y.end;
         if !prefix.adjacent(&punct) || !punct.adjacent(&q_y) {
             return self.error(Reason::InvalidAddressSymbol, start, end);
@@ -182,17 +182,18 @@ impl Parser {
                 if self.buffer.value == Symbol::Punct {
                     return self.read_raw_address(symbol.quote);
                 }
-                Ok(HirValue::new(symbol.quote, HirValueType::Number(HirNumber)))
+                let value = parse_number(&self.source, &symbol.quote)?;
+                Ok(HirValue::new(
+                    symbol.quote,
+                    HirValueType::Number(HirNumber { value }),
+                ))
             }
             Symbol::Identifier => {
                 self.advance()?;
                 match self.buffer.value {
                     Symbol::Punct => self.read_prefixed_address(symbol.quote),
                     Symbol::LeftParen => self.read_call(symbol.quote),
-                    _ => Ok(HirValue::new(
-                        symbol.quote,
-                        HirValueType::Variable(HirVariable),
-                    )),
+                    _ => Ok(HirValue::new(symbol.quote, HirValueType::VarRef(HirVarRef))),
                 }
             }
             _ => self.error_buffer(Reason::InvalidUnaryOperation),

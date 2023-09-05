@@ -1,4 +1,6 @@
-use std::{fmt::Debug, ops::Index};
+use std::{fmt::Debug, ops::Index, rc::Rc};
+
+use crate::error::{Error, Reason, Result};
 
 /// Represents a value associated with a range of text
 #[derive(Clone, Debug)]
@@ -48,9 +50,9 @@ impl Index<&Quote> for [u8] {
     }
 }
 
-pub fn parse_number(source: &[u8]) -> usize {
+pub fn parse_number(source: &Rc<[u8]>, quote: &Quote) -> Result<usize> {
     std::str::from_utf8(source)
-        .unwrap_or("0")
+        .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))?
         .parse()
-        .unwrap_or(0)
+        .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))
 }

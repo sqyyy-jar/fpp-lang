@@ -30,17 +30,11 @@ impl MirValue {
     /// - `quote`: quote of the equals symbol
     /// - `index`: index of the variable to be written to
     /// - `value`: value written
-    pub fn write(
-        &mut self,
-        mir: &mut Mir,
-        quote: Quote,
-        index: usize,
-        value: MirValue,
-    ) -> Result<()> {
+    pub fn write(&self, mir: &mut Mir, quote: Quote, index: usize, value: MirValue) -> Result<()> {
         match self {
             MirValue::BitAddress(addr) => addr.write(mir, quote, index, value),
             MirValue::VarRef(var) => {
-                let mut var_value = mir.variables[var.index].value.clone();
+                let var_value = mir.variables[var.index].value.clone();
                 var_value.write(mir, quote, index, value)?;
                 mir.variables[var.index].value = var_value;
                 Ok(())
@@ -103,7 +97,7 @@ pub struct MirVarRef {
 
 impl MirBitAddress {
     pub fn write(
-        &mut self,
+        &self,
         mir: &mut Mir,
         quote: Quote,
         _index: usize,
