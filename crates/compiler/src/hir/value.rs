@@ -16,13 +16,11 @@ impl HirValue {
 pub enum HirValueType {
     Number(HirNumber),
     Bool(HirBool),
-    Address(HirAddress),
+    BitAddress(HirBitAddress),
     Not(Box<HirNot>),
     And(Box<HirAnd>),
     Or(Box<HirOr>),
     Xor(Box<HirXor>),
-    Input(HirInput),
-    Output(HirOutput),
     VarRef(HirVarRef),
     Call(HirCall),
 }
@@ -40,10 +38,10 @@ pub struct HirNumber {
 
 /// `charx.y`
 #[derive(Debug)]
-pub struct HirAddress {
+pub struct HirBitAddress {
     pub char: u8,
-    pub x: usize,
-    pub y: usize,
+    pub x: u16,
+    pub y: u8,
 }
 
 /// `not value`, `!value`
@@ -71,20 +69,6 @@ pub struct HirOr {
 pub struct HirXor {
     pub left: HirValue,
     pub right: HirValue,
-}
-
-/// `Ex.y`
-#[derive(Debug)]
-pub struct HirInput {
-    pub x: usize,
-    pub y: usize,
-}
-
-/// `Ax.y`
-#[derive(Debug)]
-pub struct HirOutput {
-    pub x: usize,
-    pub y: usize,
 }
 
 /// `quote`

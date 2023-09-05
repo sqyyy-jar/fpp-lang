@@ -1,16 +1,28 @@
 use std::rc::Rc;
 
 use crate::{
-    error::Result,
+    error::{Error, Reason, Result},
     hir::value::{
-        HirAddress, HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirOr, HirOutput,
-        HirValue, HirValueType, HirVarRef, HirXor,
+        HirAnd, HirBitAddress, HirBool, HirCall, HirNot, HirNumber, HirOr, HirValue, HirValueType,
+        HirXor,
     },
     mir::{
-        value::{MirAnd, MirBool, MirNot, MirNumber, MirOr, MirValue, MirXor},
-        Mir,
+        value::{
+            MirAnd, MirBitAddress, MirBitAddressType, MirBool, MirNot, MirNumber, MirOr, MirValue,
+            MirVarRef, MirXor,
+        },
+        Mir, BUILTIN_FUNCTIONS,
     },
+    util::Quote,
 };
+
+fn compile_values(mir: &mut Mir, hir_values: Vec<HirValue>) -> Result<Vec<MirValue>> {
+    let mut mir_values = Vec::with_capacity(hir_values.len());
+    for value in hir_values {
+        mir_values.push(compile_value(mir, value)?);
+    }
+    Ok(mir_values)
+}
 
 fn compile_number(number: HirNumber) -> Result<MirValue> {
     Ok(MirValue::Number(MirNumber {
@@ -22,8 +34,33 @@ fn compile_bool(bool: HirBool) -> Result<MirValue> {
     Ok(MirValue::Bool(MirBool { value: bool.value }))
 }
 
-fn compile_address(_mir: &mut Mir, _address: HirAddress) -> Result<MirValue> {
-    todo!()
+fn compile_address(
+    mir: &mut Mir,
+    quote: Quote,
+    HirBitAddress { char, x, y }: HirBitAddress,
+) -> Result<MirValue> {
+    match char {
+        b'E' => Ok(MirValue::BitAddress(MirBitAddress {
+            r#type: MirBitAddressType::Input,
+            x,
+            y,
+        })),
+        b'A' => Ok(MirValue::BitAddress(MirBitAddress {
+            r#type: MirBitAddressType::Output,
+            x,
+            y,
+        })),
+        b'M' => Ok(MirValue::BitAddress(MirBitAddress {
+            r#type: MirBitAddressType::Memory,
+            x,
+            y,
+        })),
+        _ => Err(Error::new(
+            mir.source.clone(),
+            quote,
+            Reason::UnknownBitAddressType,
+        )),
+    }
 }
 
 fn compile_not(mir: &mut Mir, not: HirNot) -> Result<MirValue> {
@@ -53,34 +90,41 @@ fn compile_xor(mir: &mut Mir, xor: HirXor) -> Result<MirValue> {
     })))
 }
 
-fn compile_input(_mir: &mut Mir, _input: HirInput) -> Result<MirValue> {
-    todo!()
+fn compile_var_ref(mir: &mut Mir, quote: Quote) -> Result<MirValue> {
+    let var_name = &mir.source[&quote];
+    let Some(index) = mir.find_var(var_name) else {
+        return Err(Error::new(
+            mir.source.clone(),
+            quote,
+            Reason::UnknownVariable,
+        ));
+    };
+    Ok(MirValue::VarRef(MirVarRef { index }))
 }
 
-fn compile_output(_mir: &mut Mir, _output: HirOutput) -> Result<MirValue> {
-    todo!()
-}
-
-fn compile_var_ref(_mir: &mut Mir, _var: HirVarRef) -> Result<MirValue> {
-    todo!()
-}
-
-fn compile_call(_mir: &mut Mir, _call: HirCall) -> Result<MirValue> {
-    todo!()
+fn compile_call(mir: &mut Mir, quote: Quote, call: HirCall) -> Result<MirValue> {
+    let function_name = &mir.source[&call.name];
+    if let Some(func) = BUILTIN_FUNCTIONS.get(function_name) {
+        let args = compile_values(mir, call.args)?;
+        return func(mir, quote, &args);
+    };
+    Err(Error::new(
+        mir.source.clone(),
+        call.name,
+        Reason::UnknownFunction,
+    ))
 }
 
 pub(super) fn compile_value(mir: &mut Mir, value: HirValue) -> Result<MirValue> {
     match value.r#type {
         HirValueType::Number(number) => compile_number(number),
         HirValueType::Bool(bool) => compile_bool(bool),
-        HirValueType::Address(address) => compile_address(mir, address),
+        HirValueType::BitAddress(address) => compile_address(mir, value.quote, address),
         HirValueType::Not(not) => compile_not(mir, *not),
         HirValueType::And(and) => compile_and(mir, *and),
         HirValueType::Or(or) => compile_or(mir, *or),
         HirValueType::Xor(xor) => compile_xor(mir, *xor),
-        HirValueType::Input(input) => compile_input(mir, input),
-        HirValueType::Output(output) => compile_output(mir, output),
-        HirValueType::VarRef(var) => compile_var_ref(mir, var),
-        HirValueType::Call(call) => compile_call(mir, call),
+        HirValueType::VarRef(_) => compile_var_ref(mir, value.quote),
+        HirValueType::Call(call) => compile_call(mir, value.quote, call),
     }
 }

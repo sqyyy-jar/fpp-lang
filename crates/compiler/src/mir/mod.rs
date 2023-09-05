@@ -37,6 +37,15 @@ impl Mir {
             actions: Vec::new(),
         }
     }
+
+    pub fn find_var(&self, name: &[u8]) -> Option<usize> {
+        for (i, var) in self.variables.iter().enumerate() {
+            if name == &self.source[&var.name] {
+                return Some(i);
+            }
+        }
+        None
+    }
 }
 
 #[derive(Default)]

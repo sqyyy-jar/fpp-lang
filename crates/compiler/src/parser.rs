@@ -6,8 +6,8 @@ use crate::{
     error::{Error, Reason, Result},
     hir::{
         value::{
-            HirAddress, HirAnd, HirBool, HirCall, HirInput, HirNot, HirNumber, HirOutput, HirValue,
-            HirValueType, HirVarRef,
+            HirAnd, HirBitAddress, HirBool, HirCall, HirNot, HirNumber, HirValue, HirValueType,
+            HirVarRef,
         },
         Hir, HirLet, HirStatement, HirWrite,
     },
@@ -19,17 +19,15 @@ use crate::{
 pub struct Parser {
     source: Rc<[u8]>,
     lexer: Lexer,
-    opts: ParserOptions,
     buffer: Q<Symbol>,
 }
 
 /// General parser functions
 impl Parser {
-    pub fn new(source: Rc<[u8]>, opts: ParserOptions) -> Self {
+    pub fn new(source: Rc<[u8]>) -> Self {
         Self {
             source: source.clone(),
             lexer: Lexer::new(source),
-            opts,
             buffer: Q::new(Symbol::Null, 0, 0),
         }
     }
@@ -75,14 +73,14 @@ impl Parser {
 impl Parser {
     fn parse_address_prefix(&self, prefix: &[u8], start: usize, end: usize) -> Result<(u8, usize)> {
         if prefix.len() < 2 {
-            return self.error(Reason::InvalidAddressSymbol, start, end);
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
         let char = prefix[0];
         let Ok(slice_x) = std::str::from_utf8(&prefix[1..]) else {
-            return self.error(Reason::InvalidAddressSymbol, start, end);
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
         };
         let Ok(x) = slice_x.parse() else {
-            return self.error(Reason::InvalidAddressSymbol, start, end);
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
         };
         Ok((char, x))
     }
@@ -96,13 +94,17 @@ impl Parser {
         let q_y = self.expect(Symbol::Number)?;
         let y = parse_number(&self.source, &q_y)?;
         let end = q_y.end;
-        if !q_x.adjacent(&punct) || !punct.adjacent(&q_y) {
-            return self.error(Reason::InvalidAddressSymbol, start, end);
+        if !q_x.adjacent(&punct) || !punct.adjacent(&q_y) || x > u16::MAX as usize || y > 7 {
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
         let quote = Quote { start, end };
         Ok(HirValue::new(
             quote,
-            HirValueType::Address(HirAddress { char: NULL, x, y }),
+            HirValueType::BitAddress(HirBitAddress {
+                char: NULL,
+                x: x as u16,
+                y: y as u8,
+            }),
         ))
     }
 
@@ -113,23 +115,19 @@ impl Parser {
         let q_y = self.expect(Symbol::Number)?;
         let y = parse_number(&self.source, &q_y)?;
         let end = q_y.end;
-        if !prefix.adjacent(&punct) || !punct.adjacent(&q_y) {
-            return self.error(Reason::InvalidAddressSymbol, start, end);
+        if !prefix.adjacent(&punct) || !punct.adjacent(&q_y) || y > 7 {
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
         let (char, x) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
+        if x > u16::MAX as usize {
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
+        }
+        let x = x as u16;
+        let y = y as u8;
         let quote = Quote { start, end };
-        if self.opts.input_char == char {
-            return Ok(HirValue::new(quote, HirValueType::Input(HirInput { x, y })));
-        }
-        if self.opts.output_char == char {
-            return Ok(HirValue::new(
-                quote,
-                HirValueType::Output(HirOutput { x, y }),
-            ));
-        }
         Ok(HirValue::new(
             quote,
-            HirValueType::Address(HirAddress { char, x, y }),
+            HirValueType::BitAddress(HirBitAddress { char, x, y }),
         ))
     }
 
@@ -256,20 +254,6 @@ impl Parser {
             });
         }
         Ok(hir)
-    }
-}
-
-pub struct ParserOptions {
-    pub input_char: u8,
-    pub output_char: u8,
-}
-
-impl Default for ParserOptions {
-    fn default() -> Self {
-        Self {
-            input_char: b'E',
-            output_char: b'A',
-        }
     }
 }
 

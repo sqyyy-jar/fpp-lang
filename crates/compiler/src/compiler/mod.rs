@@ -21,16 +21,7 @@ fn compile_let(mir: &mut Mir, HirLet { name, value, .. }: HirLet) -> Result<()> 
 
 fn compile_write(mir: &mut Mir, HirWrite { quote, name, value }: HirWrite) -> Result<()> {
     let write_name = &mir.source[&name];
-    let mut index = None;
-    for (i, var) in mir.variables.iter().enumerate().rev() {
-        let var_name = &mir.source[&var.name];
-        if write_name != var_name {
-            continue;
-        }
-        index = Some(i);
-        break;
-    }
-    let Some(index) = index else {
+    let Some(index) = mir.find_var(write_name) else {
         return Err(Error::new(
             mir.source.clone(),
             quote,

@@ -39,13 +39,13 @@ pub enum Reason {
     InvalidNumber,
     // Parser
     UnexpectedSymbol,
-    InvalidAddressSymbol,
-    InvalidInputSymbol,
-    InvalidOutputSymbol,
+    InvalidBitAddressSymbol,
     InvalidUnaryOperation,
     // Mir
     NoWriteHandler,
     InvalidArgsCount,
     InvalidArgType,
     UnknownVariable,
+    UnknownFunction,
+    UnknownBitAddressType,
 }
