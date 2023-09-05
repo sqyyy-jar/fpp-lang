@@ -12,6 +12,7 @@ pub mod value;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
     b"rs" => builtin::flipflops::builtin_rs,
+    b"sr" => builtin::flipflops::builtin_sr,
 };
 
 /// MIR Function
@@ -21,6 +22,7 @@ pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
 /// - `args`: arguments of the call
 pub type MirFunction = fn(&mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue>;
 
+#[derive(Debug)]
 pub struct Mir {
     pub source: Rc<[u8]>,
     pub memory: MirMemory,
@@ -48,7 +50,7 @@ impl Mir {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct MirMemory {
     pub byte_index: usize,
     pub bit_index: u8,
@@ -70,20 +72,24 @@ impl MirMemory {
     }
 }
 
+#[derive(Debug)]
 pub struct MirVariable {
     pub name: Quote,
     pub value: MirValue,
 }
 
+#[derive(Debug)]
 pub enum MirAction {
     Output(MirOutputAction),
 }
 
+#[derive(Debug)]
 pub struct MirOutputAction {
     pub address: MirBitAddress,
     pub instructions: Vec<MirInstruction>,
 }
 
+#[derive(Debug)]
 pub enum MirInstruction {
     /// `SET`
     Set,

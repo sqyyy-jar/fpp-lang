@@ -110,11 +110,12 @@ impl MirBitAddress {
                 Reason::NoWriteHandler,
             ));
         }
+        // todo
         mir.actions.push(MirAction::Output(MirOutputAction {
             address: *self,
             instructions: vec![],
         }));
-        todo!();
+        Ok(())
     }
 }
 

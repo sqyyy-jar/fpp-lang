@@ -163,7 +163,6 @@ impl Parser {
                 self.advance()?;
                 let value = self.read_value()?;
                 self.expect(Symbol::RightParen)?;
-                // todo: incorrect quote
                 Ok(value)
             }
             Symbol::True | Symbol::False => {
