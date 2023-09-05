@@ -51,7 +51,7 @@ impl Index<&Quote> for [u8] {
 }
 
 pub fn parse_number(source: &Rc<[u8]>, quote: &Quote) -> Result<usize> {
-    std::str::from_utf8(source)
+    std::str::from_utf8(&source[quote])
         .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))?
         .parse()
         .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))
