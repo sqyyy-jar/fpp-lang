@@ -10,6 +10,7 @@ pub mod builtin;
 pub mod ops;
 pub mod transformer;
 pub mod value;
+pub mod writer;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
     b"rs" => builtin::flipflops::builtin_rs,
@@ -58,18 +59,57 @@ pub struct MirMemory {
 }
 
 impl MirMemory {
-    pub fn alloc_bit(&mut self) -> Option<(u16, u8)> {
+    pub fn alloc_u1(&mut self) -> Option<(u16, u8)> {
         if self.bit_index >= 7 {
             self.bit_index = 0;
             self.byte_index += 1;
         }
-        if self.byte_index > u16::MAX as usize {
+        let ptr = self.byte_index;
+        if ptr > 0xffff {
             return None;
         }
-        let byte = self.byte_index as u16;
         let bit = self.bit_index;
         self.bit_index += 1;
-        Some((byte, bit))
+        Some((ptr as u16, bit))
+    }
+
+    pub fn alloc_u8(&mut self) -> Option<u16> {
+        if self.bit_index > 0 {
+            self.bit_index = 0;
+            self.byte_index += 1;
+        }
+        let ptr = self.byte_index;
+        if ptr > 0xffff {
+            return None;
+        }
+        self.byte_index += 1;
+        Some(ptr as u16)
+    }
+
+    pub fn alloc_u16(&mut self) -> Option<u16> {
+        if self.bit_index > 0 {
+            self.bit_index = 0;
+            self.byte_index += 1;
+        }
+        let ptr = self.byte_index;
+        if ptr > 0xfffe {
+            return None;
+        }
+        self.byte_index += 2;
+        Some(ptr as u16)
+    }
+
+    pub fn alloc_u32(&mut self) -> Option<u16> {
+        if self.bit_index > 0 {
+            self.bit_index = 0;
+            self.byte_index += 1;
+        }
+        let ptr = self.byte_index;
+        if ptr > 0xfffc {
+            return None;
+        }
+        self.byte_index += 4;
+        Some(ptr as u16)
     }
 }
 

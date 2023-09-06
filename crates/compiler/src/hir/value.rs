@@ -36,12 +36,12 @@ pub struct HirNumber {
     pub value: usize,
 }
 
-/// `charx.y`
+/// `charptr.bit`
 #[derive(Debug)]
 pub struct HirBitAddress {
     pub char: u8,
-    pub x: u16,
-    pub y: u8,
+    pub ptr: u16,
+    pub bit: u8,
 }
 
 /// `not value`, `!value`

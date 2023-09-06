@@ -21,11 +21,11 @@ pub fn builtin_rs(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirV
     assert_args_len(mir, &quote, args, 2)?;
     assert_readable(mir, &quote, &args[0])?;
     assert_readable(mir, &quote, &args[1])?;
-    let (x, y) = mir.memory.alloc_bit().expect("Allocate bit");
+    let (ptr, bit) = mir.memory.alloc_u1().expect("Allocate bit");
     let addr = MirBitAddress {
         r#type: MirBitAddressType::Memory,
-        x,
-        y,
+        ptr,
+        bit,
     };
     let reset_bit = MirOp::ResetBit {
         cond: args[0].clone(),
@@ -51,11 +51,11 @@ pub fn builtin_sr(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirV
     assert_args_len(mir, &quote, args, 2)?;
     assert_readable(mir, &quote, &args[0])?;
     assert_readable(mir, &quote, &args[1])?;
-    let (x, y) = mir.memory.alloc_bit().expect("Allocate bit");
+    let (ptr, bit) = mir.memory.alloc_u1().expect("Allocate bit");
     let addr = MirBitAddress {
         r#type: MirBitAddressType::Memory,
-        x,
-        y,
+        ptr,
+        bit,
     };
     let set_bit = MirOp::SetBit {
         cond: args[0].clone(),

@@ -86,15 +86,16 @@ impl Parser {
     }
 
     /// Read raw address (`0.0`)
-    fn read_raw_address(&mut self, q_x: Quote) -> Result<HirValue> {
-        let start = q_x.start;
-        let x = parse_number(&self.source, &q_x)?;
+    fn read_raw_address(&mut self, q_ptr: Quote) -> Result<HirValue> {
+        let start = q_ptr.start;
+        let ptr = parse_number(&self.source, &q_ptr)?;
         let punct = self.buffer.quote.clone();
         self.advance()?;
-        let q_y = self.expect(Symbol::Number)?;
-        let y = parse_number(&self.source, &q_y)?;
-        let end = q_y.end;
-        if !q_x.adjacent(&punct) || !punct.adjacent(&q_y) || x > u16::MAX as usize || y > 7 {
+        let q_bit = self.expect(Symbol::Number)?;
+        let bit = parse_number(&self.source, &q_bit)?;
+        let end = q_bit.end;
+        if !q_ptr.adjacent(&punct) || !punct.adjacent(&q_bit) || ptr > u16::MAX as usize || bit > 7
+        {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
         let quote = Quote { start, end };
@@ -102,8 +103,8 @@ impl Parser {
             quote,
             HirValueType::BitAddress(HirBitAddress {
                 char: NULL,
-                x: x as u16,
-                y: y as u8,
+                ptr: ptr as u16,
+                bit: bit as u8,
             }),
         ))
     }
@@ -112,22 +113,22 @@ impl Parser {
     fn read_prefixed_address(&mut self, prefix: Quote) -> Result<HirValue> {
         let start = prefix.start;
         let punct = self.expect(Symbol::Punct)?;
-        let q_y = self.expect(Symbol::Number)?;
-        let y = parse_number(&self.source, &q_y)?;
-        let end = q_y.end;
-        if !prefix.adjacent(&punct) || !punct.adjacent(&q_y) || y > 7 {
+        let q_bit = self.expect(Symbol::Number)?;
+        let bit = parse_number(&self.source, &q_bit)?;
+        let end = q_bit.end;
+        if !prefix.adjacent(&punct) || !punct.adjacent(&q_bit) || bit > 7 {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
-        let (char, x) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
-        if x > u16::MAX as usize {
+        let (char, ptr) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
+        if ptr > u16::MAX as usize {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
-        let x = x as u16;
-        let y = y as u8;
+        let ptr = ptr as u16;
+        let bit = bit as u8;
         let quote = Quote { start, end };
         Ok(HirValue::new(
             quote,
-            HirValueType::BitAddress(HirBitAddress { char, x, y }),
+            HirValueType::BitAddress(HirBitAddress { char, ptr, bit }),
         ))
     }
 

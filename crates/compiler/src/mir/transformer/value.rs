@@ -37,23 +37,23 @@ fn transform_bool(bool: HirBool) -> Result<MirValue> {
 fn transform_address(
     mir: &mut Mir,
     quote: Quote,
-    HirBitAddress { char, x, y }: HirBitAddress,
+    HirBitAddress { char, ptr, bit }: HirBitAddress,
 ) -> Result<MirValue> {
     match char {
         b'E' => Ok(MirValue::BitAddress(MirBitAddress {
             r#type: MirBitAddressType::Input,
-            x,
-            y,
+            ptr,
+            bit,
         })),
         b'A' => Ok(MirValue::BitAddress(MirBitAddress {
             r#type: MirBitAddressType::Output,
-            x,
-            y,
+            ptr,
+            bit,
         })),
         b'M' => Ok(MirValue::BitAddress(MirBitAddress {
             r#type: MirBitAddressType::Memory,
-            x,
-            y,
+            ptr,
+            bit,
         })),
         _ => Err(Error::new(
             mir.source.clone(),

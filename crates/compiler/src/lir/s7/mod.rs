@@ -36,6 +36,6 @@ pub enum S7BitAddressType {
 
 pub struct S7BitAddress {
     pub r#type: S7BitAddressType,
-    pub x: u16,
-    pub y: u8,
+    pub ptr: u16,
+    pub bit: u8,
 }

@@ -6,7 +6,7 @@ use crate::{
     util::Quote,
 };
 
-use super::{ops::MirOp, Mir};
+use super::{ops::MirOp, writer::MirInstructionWriter, Mir};
 
 #[derive(Clone, Debug)]
 pub enum MirValue {
@@ -86,8 +86,22 @@ pub enum MirBitAddressType {
 #[derive(Clone, Copy, Debug)]
 pub struct MirBitAddress {
     pub r#type: MirBitAddressType,
-    pub x: u16,
-    pub y: u8,
+    pub ptr: u16,
+    pub bit: u8,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MirAddressType {
+    Memory8,
+    Memory16,
+    Memory32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct MirAddress {
+    pub r#type: MirAddressType,
+    pub ptr: u16,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -96,13 +110,7 @@ pub struct MirVarRef {
 }
 
 impl MirBitAddress {
-    pub fn write(
-        &self,
-        mir: &mut Mir,
-        quote: Quote,
-        _index: usize,
-        _value: MirValue,
-    ) -> Result<()> {
+    pub fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, value: MirValue) -> Result<()> {
         if self.r#type != MirBitAddressType::Output {
             return Err(Error::new(
                 mir.source.clone(),
@@ -110,10 +118,11 @@ impl MirBitAddress {
                 Reason::NoWriteHandler,
             ));
         }
-        // todo
+        let mut writer = MirInstructionWriter::default();
+        writer.write_value(mir, value)?;
         mir.actions.push(MirAction::Output(MirOutputAction {
             address: *self,
-            instructions: vec![],
+            instructions: writer.instructions,
         }));
         Ok(())
     }
