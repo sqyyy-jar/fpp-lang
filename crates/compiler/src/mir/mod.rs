@@ -13,6 +13,9 @@ pub mod value;
 pub mod writer;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
+    b"mb" => builtin::memory::builtin_mb,
+    b"mw" => builtin::memory::builtin_mw,
+    b"md" => builtin::memory::builtin_md,
     b"rs" => builtin::flipflops::builtin_rs,
     b"sr" => builtin::flipflops::builtin_sr,
 };

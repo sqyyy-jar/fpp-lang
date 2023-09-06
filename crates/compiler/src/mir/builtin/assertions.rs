@@ -20,7 +20,7 @@ pub fn assert_readable(mir: &Mir, quote: &Quote, value: &MirValue) -> Result<()>
         MirValue::Bool(_) | MirValue::Number(_) | MirValue::BitAddress(_) | MirValue::Ops(_) => {
             Ok(())
         }
-        MirValue::Object(_) => Err(Error::new(
+        MirValue::Address(_) | MirValue::Object(_) => Err(Error::new(
             mir.source.clone(),
             quote.clone(),
             Reason::InvalidArgType,

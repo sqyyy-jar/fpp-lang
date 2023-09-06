@@ -13,6 +13,7 @@ pub enum MirValue {
     Bool(MirBool),
     Number(MirNumber),
     BitAddress(MirBitAddress),
+    Address(MirAddress),
     VarRef(MirVarRef),
     /// A series of operations expected to return a value
     Ops(Rc<MirOps>),
