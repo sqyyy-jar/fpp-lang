@@ -8,7 +8,7 @@ use crate::{
     },
     mir::{
         value::{
-            MirAnd, MirBitAddress, MirBitAddressType, MirBool, MirNot, MirNumber, MirOr, MirValue,
+            MirAddress, MirAddressType, MirAnd, MirBool, MirNot, MirNumber, MirOr, MirValue,
             MirVarRef, MirXor,
         },
         Mir, BUILTIN_FUNCTIONS,
@@ -39,21 +39,15 @@ fn transform_address(
     quote: Quote,
     HirBitAddress { char, ptr, bit }: HirBitAddress,
 ) -> Result<MirValue> {
+    let ptr = ptr as u32 | (bit as u32) << 16;
     match char {
-        b'I' | b'E' => Ok(MirValue::BitAddress(MirBitAddress {
-            r#type: MirBitAddressType::Input,
+        b'I' | b'E' => Ok(MirValue::Address(MirAddress {
+            r#type: MirAddressType::PhysicalInput1,
             ptr,
-            bit,
         })),
-        b'Q' | b'A' => Ok(MirValue::BitAddress(MirBitAddress {
-            r#type: MirBitAddressType::Output,
+        b'Q' | b'A' => Ok(MirValue::Address(MirAddress {
+            r#type: MirAddressType::PhysicalOutput1,
             ptr,
-            bit,
-        })),
-        b'M' => Ok(MirValue::BitAddress(MirBitAddress {
-            r#type: MirBitAddressType::Memory,
-            ptr,
-            bit,
         })),
         _ => Err(Error::new(
             mir.source.clone(),

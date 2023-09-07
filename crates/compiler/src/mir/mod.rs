@@ -4,7 +4,7 @@ use phf::{phf_map, Map};
 
 use crate::{error::Result, util::Quote};
 
-use self::value::{MirBitAddress, MirValue};
+use self::value::{MirAddress, MirValue};
 
 pub mod builtin;
 pub mod ops;
@@ -13,6 +13,7 @@ pub mod value;
 pub mod writer;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
+    b"M" => builtin::memory::builtin_m,
     b"MB" => builtin::memory::builtin_mb,
     b"MW" => builtin::memory::builtin_mw,
     b"MD" => builtin::memory::builtin_md,
@@ -57,62 +58,57 @@ impl Mir {
 
 #[derive(Debug, Default)]
 pub struct MirMemory {
-    pub byte_index: usize,
-    pub bit_index: u8,
+    pub allocated_bits: usize,
+    pub allocated_bytes: usize,
 }
 
 impl MirMemory {
-    pub fn alloc_u1(&mut self) -> Option<(u16, u8)> {
-        if self.bit_index >= 7 {
-            self.bit_index = 0;
-            self.byte_index += 1;
-        }
-        let ptr = self.byte_index;
-        if ptr > 0xffff {
+    pub fn alloc1(&mut self) -> Option<MirAddress> {
+        let ptr = self.allocated_bits;
+        if ptr == 0xffff_ffff {
             return None;
         }
-        let bit = self.bit_index;
-        self.bit_index += 1;
-        Some((ptr as u16, bit))
+        self.allocated_bits += 1;
+        Some(MirAddress {
+            r#type: value::MirAddressType::Memory1,
+            ptr: ptr as u32,
+        })
     }
 
-    pub fn alloc_u8(&mut self) -> Option<u16> {
-        if self.bit_index > 0 {
-            self.bit_index = 0;
-            self.byte_index += 1;
-        }
-        let ptr = self.byte_index;
-        if ptr > 0xffff {
+    pub fn alloc8(&mut self) -> Option<MirAddress> {
+        let ptr = self.allocated_bytes;
+        if ptr == 0xffff_ffff {
             return None;
         }
-        self.byte_index += 1;
-        Some(ptr as u16)
+        self.allocated_bytes += 1;
+        Some(MirAddress {
+            r#type: value::MirAddressType::Memory8,
+            ptr: ptr as u32,
+        })
     }
 
-    pub fn alloc_u16(&mut self) -> Option<u16> {
-        if self.bit_index > 0 {
-            self.bit_index = 0;
-            self.byte_index += 1;
-        }
-        let ptr = self.byte_index;
-        if ptr > 0xfffe {
+    pub fn alloc16(&mut self) -> Option<MirAddress> {
+        let ptr = self.allocated_bytes;
+        if ptr == 0xffff_ffff {
             return None;
         }
-        self.byte_index += 2;
-        Some(ptr as u16)
+        self.allocated_bytes += 2;
+        Some(MirAddress {
+            r#type: value::MirAddressType::Memory16,
+            ptr: ptr as u32,
+        })
     }
 
-    pub fn alloc_u32(&mut self) -> Option<u16> {
-        if self.bit_index > 0 {
-            self.bit_index = 0;
-            self.byte_index += 1;
-        }
-        let ptr = self.byte_index;
-        if ptr > 0xfffc {
+    pub fn alloc32(&mut self) -> Option<MirAddress> {
+        let ptr = self.allocated_bytes;
+        if ptr == 0xffff_ffff {
             return None;
         }
-        self.byte_index += 4;
-        Some(ptr as u16)
+        self.allocated_bytes += 4;
+        Some(MirAddress {
+            r#type: value::MirAddressType::Memory32,
+            ptr: ptr as u32,
+        })
     }
 }
 
@@ -129,7 +125,7 @@ pub enum MirAction {
 
 #[derive(Debug)]
 pub struct MirOutputAction {
-    pub address: MirBitAddress,
+    pub address: MirAddress,
     pub instructions: Vec<MirInstruction>,
 }
 
@@ -141,17 +137,17 @@ pub enum MirInstruction {
     /// `N`
     Not,
     /// `U op`
-    And { addr: MirBitAddress },
+    And { addr: MirAddress },
     /// `O op`
-    Or { addr: MirBitAddress },
+    Or { addr: MirAddress },
     /// `X op`
-    Xor { addr: MirBitAddress },
+    Xor { addr: MirAddress },
     /// `= dst`
-    WriteBit { addr: MirBitAddress },
+    WriteBit { addr: MirAddress },
     /// `S dst`
-    SetBit { addr: MirBitAddress },
+    SetBit { addr: MirAddress },
     /// `R dst`
-    ResetBit { addr: MirBitAddress },
+    ResetBit { addr: MirAddress },
     /// `U(`
     AndStart,
     /// `O(`

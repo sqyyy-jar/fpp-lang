@@ -2,17 +2,15 @@ use std::{fmt::Debug, rc::Rc};
 
 use crate::{
     error::{Error, Reason, Result},
-    mir::{MirAction, MirOutputAction},
     util::Quote,
 };
 
-use super::{ops::MirOp, writer::MirInstructionWriter, Mir};
+use super::{ops::MirOp, writer::MirInstructionWriter, Mir, MirAction, MirOutputAction};
 
 #[derive(Clone, Debug)]
 pub enum MirValue {
     Bool(MirBool),
     Number(MirNumber),
-    BitAddress(MirBitAddress),
     Address(MirAddress),
     VarRef(MirVarRef),
     /// A series of operations expected to return a value
@@ -33,7 +31,7 @@ impl MirValue {
     /// - `value`: value written
     pub fn write(&self, mir: &mut Mir, quote: Quote, index: usize, value: MirValue) -> Result<()> {
         match self {
-            MirValue::BitAddress(addr) => addr.write(mir, quote, index, value),
+            MirValue::Address(addr) => addr.write(mir, quote, index, value),
             MirValue::VarRef(var) => {
                 let var_value = mir.variables[var.index].value.clone();
                 var_value.write(mir, quote, index, value)?;
@@ -46,6 +44,19 @@ impl MirValue {
                 quote,
                 Reason::NoWriteHandler,
             )),
+        }
+    }
+
+    pub fn is_bit_readable(&self, mir: &Mir) -> bool {
+        match self {
+            MirValue::Ops(_) => true,
+            MirValue::Address(addr) => addr.is_bit(),
+            MirValue::Bool(_) | MirValue::Number(_) | MirValue::Object(_) => false,
+            MirValue::VarRef(var) => mir.variables[var.index].value.is_bit_readable(mir),
+            MirValue::Not(not) => not.value.is_bit_readable(mir),
+            MirValue::And(and) => and.left.is_bit_readable(mir) && and.right.is_bit_readable(mir),
+            MirValue::Or(or) => or.left.is_bit_readable(mir) && or.right.is_bit_readable(mir),
+            MirValue::Xor(xor) => xor.left.is_bit_readable(mir) && xor.right.is_bit_readable(mir),
         }
     }
 }
@@ -78,26 +89,35 @@ pub struct MirNumber {
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MirBitAddressType {
-    Input,
-    Output,
-    Memory,
+pub enum MirAddressType {
+    PhysicalInput1,
+    PhysicalOutput1,
+    Memory1,
+    Memory8,
+    Memory16,
+    Memory32,
 }
 
 #[derive(Clone, Copy)]
-pub struct MirBitAddress {
-    pub r#type: MirBitAddressType,
-    pub ptr: u16,
-    pub bit: u8,
+pub struct MirAddress {
+    pub r#type: MirAddressType,
+    pub ptr: u32,
 }
 
-impl MirBitAddress {
+impl MirAddress {
     pub fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, value: MirValue) -> Result<()> {
-        if self.r#type != MirBitAddressType::Output {
+        if self.r#type != MirAddressType::PhysicalOutput1 {
             return Err(Error::new(
                 mir.source.clone(),
                 quote,
                 Reason::NoWriteHandler,
+            ));
+        }
+        if !value.is_bit_readable(mir) {
+            return Err(Error::new(
+                mir.source.clone(),
+                quote,
+                Reason::ValueNotBitReadable,
             ));
         }
         let mut writer = MirInstructionWriter::default();
@@ -108,31 +128,46 @@ impl MirBitAddress {
         }));
         Ok(())
     }
-}
 
-impl Debug for MirBitAddress {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let c = match self.r#type {
-            MirBitAddressType::Input => 'I',
-            MirBitAddressType::Output => 'Q',
-            MirBitAddressType::Memory => 'M',
-        };
-        write!(f, "{c}{}.{}", self.ptr, self.bit)
+    pub fn is_physical(self) -> bool {
+        matches!(
+            self.r#type,
+            MirAddressType::PhysicalInput1 | MirAddressType::PhysicalOutput1
+        )
+    }
+
+    pub fn is_virtual(self) -> bool {
+        !self.is_physical()
+    }
+
+    pub fn is_bit(self) -> bool {
+        matches!(
+            self.r#type,
+            MirAddressType::PhysicalInput1
+                | MirAddressType::PhysicalOutput1
+                | MirAddressType::Memory1
+        )
     }
 }
 
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MirAddressType {
-    Memory8,
-    Memory16,
-    Memory32,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct MirAddress {
-    pub r#type: MirAddressType,
-    pub ptr: u16,
+impl Debug for MirAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let prefix = match self.r#type {
+            MirAddressType::PhysicalInput1 => "I",
+            MirAddressType::PhysicalOutput1 => "Q",
+            MirAddressType::Memory1 => "M",
+            MirAddressType::Memory8 => "MB",
+            MirAddressType::Memory16 => "MW",
+            MirAddressType::Memory32 => "MD",
+        };
+        if self.is_bit() && self.is_physical() {
+            let ptr = self.ptr & 0xffff;
+            let bit = self.ptr >> 16;
+            write!(f, "{prefix}{ptr}.{bit}")
+        } else {
+            write!(f, "{prefix}{}", self.ptr)
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

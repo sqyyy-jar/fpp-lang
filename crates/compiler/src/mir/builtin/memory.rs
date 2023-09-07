@@ -1,40 +1,35 @@
 use crate::{
     error::Result,
-    mir::{
-        value::{MirAddress, MirAddressType, MirValue},
-        Mir,
-    },
+    mir::{value::MirValue, Mir},
     util::Quote,
 };
 
 use super::assertions::assert_args_len;
 
-/// # Allocate memory byte
+/// Allocate memory bit
+pub fn builtin_m(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
+    assert_args_len(mir, &quote, args, 0)?;
+    let addr = mir.memory.alloc1().expect("Allocate u1");
+    Ok(MirValue::Address(addr))
+}
+
+/// Allocate memory byte
 pub fn builtin_mb(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 0)?;
-    let ptr = mir.memory.alloc_u8().expect("Allocate u8");
-    Ok(MirValue::Address(MirAddress {
-        r#type: MirAddressType::Memory8,
-        ptr,
-    }))
+    let addr = mir.memory.alloc8().expect("Allocate u8");
+    Ok(MirValue::Address(addr))
 }
 
-/// # Allocate memory word
+/// Allocate memory word
 pub fn builtin_mw(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 0)?;
-    let ptr = mir.memory.alloc_u16().expect("Allocate u16");
-    Ok(MirValue::Address(MirAddress {
-        r#type: MirAddressType::Memory16,
-        ptr,
-    }))
+    let addr = mir.memory.alloc16().expect("Allocate u16");
+    Ok(MirValue::Address(addr))
 }
 
-/// # Allocate memory double word
+/// Allocate memory double word
 pub fn builtin_md(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 0)?;
-    let ptr = mir.memory.alloc_u32().expect("Allocate u32");
-    Ok(MirValue::Address(MirAddress {
-        r#type: MirAddressType::Memory32,
-        ptr,
-    }))
+    let addr = mir.memory.alloc32().expect("Allocate u32");
+    Ok(MirValue::Address(addr))
 }

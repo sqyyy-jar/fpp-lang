@@ -1,8 +1,8 @@
-use super::value::{MirBitAddress, MirValue};
+use super::value::{MirAddress, MirValue};
 
 #[derive(Debug)]
 pub enum MirOp {
-    SetBit { cond: MirValue, addr: MirBitAddress },
-    ResetBit { cond: MirValue, addr: MirBitAddress },
-    And { addr: MirBitAddress },
+    SetBit { cond: MirValue, addr: MirAddress },
+    ResetBit { cond: MirValue, addr: MirAddress },
+    And { addr: MirAddress },
 }

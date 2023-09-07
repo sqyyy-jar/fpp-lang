@@ -48,4 +48,5 @@ pub enum Reason {
     UnknownVariable,
     UnknownFunction,
     UnknownBitAddressType,
+    ValueNotBitReadable,
 }

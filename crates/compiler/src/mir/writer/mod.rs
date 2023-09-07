@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::{error::Result, mir::ops::MirOp};
 
 use super::{
-    value::{MirAnd, MirBitAddress, MirNot, MirOps, MirOr, MirValue, MirVarRef, MirXor},
+    value::{MirAddress, MirAnd, MirNot, MirOps, MirOr, MirValue, MirVarRef, MirXor},
     Mir, MirInstruction,
 };
 
@@ -13,7 +13,8 @@ pub struct MirInstructionWriter {
 }
 
 impl MirInstructionWriter {
-    fn write_bit_addr(&mut self, addr: MirBitAddress) -> Result<()> {
+    fn write_addr(&mut self, addr: MirAddress) -> Result<()> {
+        assert!(addr.is_bit());
         self.instructions.push(MirInstruction::And { addr });
         Ok(())
     }
@@ -76,8 +77,7 @@ impl MirInstructionWriter {
         match value {
             MirValue::Bool(_) => todo!(),
             MirValue::Number(_) => todo!(),
-            MirValue::BitAddress(bit_addr) => self.write_bit_addr(*bit_addr),
-            MirValue::Address(_) => todo!(),
+            MirValue::Address(addr) => self.write_addr(*addr),
             MirValue::VarRef(var_ref) => self.write_var_ref(mir, *var_ref),
             MirValue::Ops(ops) => self.write_ops(mir, ops),
             MirValue::Object(_) => todo!(),

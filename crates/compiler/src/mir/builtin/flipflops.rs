@@ -3,9 +3,9 @@ use std::rc::Rc;
 use crate::{
     error::Result,
     mir::{
-        builtin::assertions::{assert_args_len, assert_readable},
+        builtin::assertions::{assert_args_len, assert_bit_readable},
         ops::MirOp,
-        value::{MirBitAddress, MirBitAddressType, MirOps, MirValue},
+        value::{MirOps, MirValue},
         Mir,
     },
     util::Quote,
@@ -19,14 +19,9 @@ use crate::{
 /// ```
 pub fn builtin_rs(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 2)?;
-    assert_readable(mir, &quote, &args[0])?;
-    assert_readable(mir, &quote, &args[1])?;
-    let (ptr, bit) = mir.memory.alloc_u1().expect("Allocate bit");
-    let addr = MirBitAddress {
-        r#type: MirBitAddressType::Memory,
-        ptr,
-        bit,
-    };
+    assert_bit_readable(mir, &quote, &args[0])?;
+    assert_bit_readable(mir, &quote, &args[1])?;
+    let addr = mir.memory.alloc1().expect("Allocate bit");
     let reset_bit = MirOp::ResetBit {
         cond: args[0].clone(),
         addr,
@@ -49,14 +44,9 @@ pub fn builtin_rs(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirV
 /// ```
 pub fn builtin_sr(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 2)?;
-    assert_readable(mir, &quote, &args[0])?;
-    assert_readable(mir, &quote, &args[1])?;
-    let (ptr, bit) = mir.memory.alloc_u1().expect("Allocate bit");
-    let addr = MirBitAddress {
-        r#type: MirBitAddressType::Memory,
-        ptr,
-        bit,
-    };
+    assert_bit_readable(mir, &quote, &args[0])?;
+    assert_bit_readable(mir, &quote, &args[1])?;
+    let addr = mir.memory.alloc1().expect("Allocate bit");
     let set_bit = MirOp::SetBit {
         cond: args[0].clone(),
         addr,
