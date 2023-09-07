@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{fmt::Debug, rc::Rc};
 
 use phf::{phf_map, Map};
 
@@ -13,9 +13,9 @@ pub mod value;
 pub mod writer;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
-    b"mb" => builtin::memory::builtin_mb,
-    b"mw" => builtin::memory::builtin_mw,
-    b"md" => builtin::memory::builtin_md,
+    b"MB" => builtin::memory::builtin_mb,
+    b"MW" => builtin::memory::builtin_mw,
+    b"MD" => builtin::memory::builtin_md,
     b"rs" => builtin::flipflops::builtin_rs,
     b"sr" => builtin::flipflops::builtin_sr,
 };
@@ -133,7 +133,6 @@ pub struct MirOutputAction {
     pub instructions: Vec<MirInstruction>,
 }
 
-#[derive(Debug)]
 pub enum MirInstruction {
     /// `SET`
     Set,
@@ -142,15 +141,43 @@ pub enum MirInstruction {
     /// `N`
     Not,
     /// `U op`
-    And { op: MirBitAddress },
+    And { addr: MirBitAddress },
     /// `O op`
-    Or { op: MirBitAddress },
+    Or { addr: MirBitAddress },
     /// `X op`
-    Xor { op: MirBitAddress },
+    Xor { addr: MirBitAddress },
     /// `= dst`
-    WriteBit { dst: MirBitAddress },
+    WriteBit { addr: MirBitAddress },
     /// `S dst`
-    SetBit { dst: MirBitAddress },
+    SetBit { addr: MirBitAddress },
     /// `R dst`
-    ResetBit { dst: MirBitAddress },
+    ResetBit { addr: MirBitAddress },
+    /// `U(`
+    AndStart,
+    /// `O(`
+    OrStart,
+    /// `X(`
+    XorStart,
+    /// `)`
+    End,
+}
+
+impl Debug for MirInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Set => write!(f, "SET"),
+            Self::Clear => write!(f, "CLR"),
+            Self::Not => write!(f, "N"),
+            Self::And { addr } => write!(f, "U {addr:?}"),
+            Self::Or { addr } => write!(f, "O {addr:?}"),
+            Self::Xor { addr } => write!(f, "X {addr:?}"),
+            Self::WriteBit { addr } => write!(f, "= {addr:?}"),
+            Self::SetBit { addr } => write!(f, "S {addr:?}"),
+            Self::ResetBit { addr } => write!(f, "R {addr:?}"),
+            Self::AndStart => write!(f, "U("),
+            Self::OrStart => write!(f, "O("),
+            Self::XorStart => write!(f, "X("),
+            Self::End => write!(f, ")"),
+        }
+    }
 }

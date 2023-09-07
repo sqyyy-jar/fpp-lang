@@ -40,12 +40,12 @@ fn transform_address(
     HirBitAddress { char, ptr, bit }: HirBitAddress,
 ) -> Result<MirValue> {
     match char {
-        b'E' => Ok(MirValue::BitAddress(MirBitAddress {
+        b'I' | b'E' => Ok(MirValue::BitAddress(MirBitAddress {
             r#type: MirBitAddressType::Input,
             ptr,
             bit,
         })),
-        b'A' => Ok(MirValue::BitAddress(MirBitAddress {
+        b'Q' | b'A' => Ok(MirValue::BitAddress(MirBitAddress {
             r#type: MirBitAddressType::Output,
             ptr,
             bit,

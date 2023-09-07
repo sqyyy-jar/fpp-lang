@@ -84,11 +84,41 @@ pub enum MirBitAddressType {
     Memory,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct MirBitAddress {
     pub r#type: MirBitAddressType,
     pub ptr: u16,
     pub bit: u8,
+}
+
+impl MirBitAddress {
+    pub fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, value: MirValue) -> Result<()> {
+        if self.r#type != MirBitAddressType::Output {
+            return Err(Error::new(
+                mir.source.clone(),
+                quote,
+                Reason::NoWriteHandler,
+            ));
+        }
+        let mut writer = MirInstructionWriter::default();
+        writer.write_value(mir, &value)?;
+        mir.actions.push(MirAction::Output(MirOutputAction {
+            address: *self,
+            instructions: writer.instructions,
+        }));
+        Ok(())
+    }
+}
+
+impl Debug for MirBitAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let c = match self.r#type {
+            MirBitAddressType::Input => 'I',
+            MirBitAddressType::Output => 'Q',
+            MirBitAddressType::Memory => 'M',
+        };
+        write!(f, "{c}{}.{}", self.ptr, self.bit)
+    }
 }
 
 #[repr(u8)]
@@ -108,25 +138,6 @@ pub struct MirAddress {
 #[derive(Clone, Copy, Debug)]
 pub struct MirVarRef {
     pub index: usize,
-}
-
-impl MirBitAddress {
-    pub fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, value: MirValue) -> Result<()> {
-        if self.r#type != MirBitAddressType::Output {
-            return Err(Error::new(
-                mir.source.clone(),
-                quote,
-                Reason::NoWriteHandler,
-            ));
-        }
-        let mut writer = MirInstructionWriter::default();
-        writer.write_value(mir, value)?;
-        mir.actions.push(MirAction::Output(MirOutputAction {
-            address: *self,
-            instructions: writer.instructions,
-        }));
-        Ok(())
-    }
 }
 
 #[derive(Debug)]
