@@ -1,10 +1,10 @@
 # The F++ Programming Language
 
-## Design
+## Example program
 
 ```rs
-let button = in(0.0);
-let led = out(0.0);
+let button = I0.0;
+let led = Q0.0;
 
 led = not button;
 ```
