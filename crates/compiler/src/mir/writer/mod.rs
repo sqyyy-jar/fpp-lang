@@ -1,3 +1,5 @@
+pub mod optimizer;
+
 use std::rc::Rc;
 
 use crate::{error::Result, mir::ops::MirOp};

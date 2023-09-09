@@ -129,7 +129,10 @@ pub struct MirOutputAction {
     pub instructions: Vec<MirInstruction>,
 }
 
+#[derive(Clone)]
 pub enum MirInstruction {
+    /// Dummy instruction
+    Dummy,
     /// `SET`
     Set,
     /// `CLR`
@@ -158,9 +161,45 @@ pub enum MirInstruction {
     End,
 }
 
+impl MirInstruction {
+    pub fn is_dummy(&self) -> bool {
+        matches!(self, Self::Dummy)
+    }
+
+    pub fn is_end(&self) -> bool {
+        matches!(self, Self::End)
+    }
+
+    pub fn has_bracket(&self) -> bool {
+        matches!(self, Self::AndStart | Self::OrStart | Self::XorStart)
+    }
+
+    pub fn unbracket(&self, addr: MirAddress) -> MirInstruction {
+        match self {
+            MirInstruction::AndStart => MirInstruction::And { addr },
+            MirInstruction::OrStart => MirInstruction::Or { addr },
+            MirInstruction::XorStart => MirInstruction::Xor { addr },
+            _ => panic!("Invalid instruction"),
+        }
+    }
+
+    pub fn addr(&self) -> MirAddress {
+        match self {
+            MirInstruction::And { addr }
+            | MirInstruction::Or { addr }
+            | MirInstruction::Xor { addr }
+            | MirInstruction::WriteBit { addr }
+            | MirInstruction::SetBit { addr }
+            | MirInstruction::ResetBit { addr } => *addr,
+            _ => panic!("Invalid instruction"),
+        }
+    }
+}
+
 impl Debug for MirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Dummy => write!(f, "DUMMY"),
             Self::Set => write!(f, "SET"),
             Self::Clear => write!(f, "CLR"),
             Self::Not => write!(f, "N"),

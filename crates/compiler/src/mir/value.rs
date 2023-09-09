@@ -5,7 +5,11 @@ use crate::{
     util::Quote,
 };
 
-use super::{ops::MirOp, writer::MirInstructionWriter, Mir, MirAction, MirOutputAction};
+use super::{
+    ops::MirOp,
+    writer::{optimizer::optimize, MirInstructionWriter},
+    Mir, MirAction, MirOutputAction,
+};
 
 #[derive(Clone, Debug)]
 pub enum MirValue {
@@ -98,7 +102,7 @@ pub enum MirAddressType {
     Memory32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct MirAddress {
     pub r#type: MirAddressType,
     pub ptr: u32,
@@ -122,6 +126,7 @@ impl MirAddress {
         }
         let mut writer = MirInstructionWriter::default();
         writer.write_value(mir, &value)?;
+        optimize(&mut writer);
         mir.actions.push(MirAction::Output(MirOutputAction {
             address: *self,
             instructions: writer.instructions,
