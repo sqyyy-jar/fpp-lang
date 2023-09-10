@@ -133,32 +133,60 @@ pub struct MirOutputAction {
 pub enum MirInstruction {
     /// Dummy instruction
     Dummy,
+    /// `U op`
+    And { addr: MirAddress },
+    /// `UN op`
+    AndNot { addr: MirAddress },
+    /// `O op`
+    Or { addr: MirAddress },
+    /// `ON op`
+    OrNot { addr: MirAddress },
+    /// `X op`
+    Xor { addr: MirAddress },
+    /// `XN op`
+    XorNot { addr: MirAddress },
+    /// `U(`
+    AndStart,
+    /// `UN(`
+    AndNotStart,
+    /// `O(`
+    OrStart,
+    /// `ON(`
+    OrNotStart,
+    /// `X(`
+    XorStart,
+    /// `XN(`
+    XorNotStart,
+    /// `)`
+    End,
+    /// `= dst`
+    AssignBit { addr: MirAddress },
+    /// `R dst`
+    ResetBit { addr: MirAddress },
+    /// `S dst`
+    SetBit { addr: MirAddress },
+    /// `N`
+    Not,
     /// `SET`
     Set,
     /// `CLR`
     Clear,
-    /// `N`
-    Not,
-    /// `U op`
-    And { addr: MirAddress },
-    /// `O op`
-    Or { addr: MirAddress },
-    /// `X op`
-    Xor { addr: MirAddress },
-    /// `= dst`
-    WriteBit { addr: MirAddress },
-    /// `S dst`
-    SetBit { addr: MirAddress },
-    /// `R dst`
-    ResetBit { addr: MirAddress },
-    /// `U(`
-    AndStart,
-    /// `O(`
-    OrStart,
-    /// `X(`
-    XorStart,
-    /// `)`
-    End,
+    /// `SAVE`
+    Save,
+    /// `L addr`
+    CounterLoadInt { addr: MirAddress },
+    /// `LC addr`
+    CounterLoadBcd { addr: MirAddress },
+    /// `R addr`
+    CounterReset { addr: MirAddress },
+    /// `S addr`
+    CounterSet { addr: MirAddress },
+    /// `ZV addr`
+    CounterForward { addr: MirAddress },
+    /// `ZR addr`
+    CounterBackward { addr: MirAddress },
+    /// `T addr`
+    Transfer { addr: MirAddress },
 }
 
 impl MirInstruction {
@@ -171,26 +199,47 @@ impl MirInstruction {
     }
 
     pub fn has_bracket(&self) -> bool {
-        matches!(self, Self::AndStart | Self::OrStart | Self::XorStart)
+        matches!(
+            self,
+            Self::AndStart
+                | Self::AndNotStart
+                | Self::OrStart
+                | Self::OrNotStart
+                | Self::XorStart
+                | Self::XorNotStart
+        )
     }
 
     pub fn unbracket(&self, addr: MirAddress) -> MirInstruction {
         match self {
-            MirInstruction::AndStart => MirInstruction::And { addr },
-            MirInstruction::OrStart => MirInstruction::Or { addr },
-            MirInstruction::XorStart => MirInstruction::Xor { addr },
+            Self::AndStart => Self::And { addr },
+            Self::AndNotStart => Self::AndNot { addr },
+            Self::OrStart => Self::Or { addr },
+            Self::OrNotStart => Self::OrNot { addr },
+            Self::XorStart => Self::Xor { addr },
+            Self::XorNotStart => Self::XorNot { addr },
             _ => panic!("Invalid instruction"),
         }
     }
 
     pub fn addr(&self) -> MirAddress {
         match self {
-            MirInstruction::And { addr }
-            | MirInstruction::Or { addr }
-            | MirInstruction::Xor { addr }
-            | MirInstruction::WriteBit { addr }
-            | MirInstruction::SetBit { addr }
-            | MirInstruction::ResetBit { addr } => *addr,
+            Self::And { addr }
+            | Self::AndNot { addr }
+            | Self::Or { addr }
+            | Self::OrNot { addr }
+            | Self::Xor { addr }
+            | Self::XorNot { addr }
+            | Self::AssignBit { addr }
+            | Self::ResetBit { addr }
+            | Self::SetBit { addr }
+            | Self::CounterLoadInt { addr }
+            | Self::CounterLoadBcd { addr }
+            | Self::CounterReset { addr }
+            | Self::CounterSet { addr }
+            | Self::CounterForward { addr }
+            | Self::CounterBackward { addr }
+            | Self::Transfer { addr } => *addr,
             _ => panic!("Invalid instruction"),
         }
     }
@@ -200,19 +249,33 @@ impl Debug for MirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Dummy => write!(f, "DUMMY"),
+            Self::And { addr } => write!(f, "U {addr:?}"),
+            Self::AndNot { addr } => write!(f, "UN {addr:?}"),
+            Self::Or { addr } => write!(f, "O {addr:?}"),
+            Self::OrNot { addr } => write!(f, "ON {addr:?}"),
+            Self::Xor { addr } => write!(f, "X {addr:?}"),
+            Self::XorNot { addr } => write!(f, "XN {addr:?}"),
+            Self::AndStart => write!(f, "U("),
+            Self::AndNotStart => write!(f, "UN("),
+            Self::OrStart => write!(f, "O("),
+            Self::OrNotStart => write!(f, "ON("),
+            Self::XorStart => write!(f, "X("),
+            Self::XorNotStart => write!(f, "XN("),
+            Self::End => write!(f, ")"),
+            Self::AssignBit { addr } => write!(f, "= {addr:?}"),
+            Self::ResetBit { addr } => write!(f, "R {addr:?}"),
+            Self::SetBit { addr } => write!(f, "S {addr:?}"),
+            Self::Not => write!(f, "N"),
             Self::Set => write!(f, "SET"),
             Self::Clear => write!(f, "CLR"),
-            Self::Not => write!(f, "N"),
-            Self::And { addr } => write!(f, "U {addr:?}"),
-            Self::Or { addr } => write!(f, "O {addr:?}"),
-            Self::Xor { addr } => write!(f, "X {addr:?}"),
-            Self::WriteBit { addr } => write!(f, "= {addr:?}"),
-            Self::SetBit { addr } => write!(f, "S {addr:?}"),
-            Self::ResetBit { addr } => write!(f, "R {addr:?}"),
-            Self::AndStart => write!(f, "U("),
-            Self::OrStart => write!(f, "O("),
-            Self::XorStart => write!(f, "X("),
-            Self::End => write!(f, ")"),
+            Self::Save => write!(f, "SAVE"),
+            Self::CounterLoadInt { addr } => write!(f, "L {addr:?}"),
+            Self::CounterLoadBcd { addr } => write!(f, "LC {addr:?}"),
+            Self::CounterReset { addr } => write!(f, "R {addr:?}"),
+            Self::CounterSet { addr } => write!(f, "S {addr:?}"),
+            Self::CounterForward { addr } => write!(f, "ZV {addr:?}"),
+            Self::CounterBackward { addr } => write!(f, "ZR {addr:?}"),
+            Self::Transfer { addr } => write!(f, "T {addr:?}"),
         }
     }
 }

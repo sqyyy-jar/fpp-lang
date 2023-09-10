@@ -96,6 +96,7 @@ pub struct MirNumber {
 pub enum MirAddressType {
     PhysicalInput1,
     PhysicalOutput1,
+    PhysicalCounter,
     Memory1,
     Memory8,
     Memory16,
@@ -137,7 +138,9 @@ impl MirAddress {
     pub fn is_physical(self) -> bool {
         matches!(
             self.r#type,
-            MirAddressType::PhysicalInput1 | MirAddressType::PhysicalOutput1
+            MirAddressType::PhysicalInput1
+                | MirAddressType::PhysicalOutput1
+                | MirAddressType::PhysicalCounter
         )
     }
 
@@ -160,6 +163,7 @@ impl Debug for MirAddress {
         let prefix = match self.r#type {
             MirAddressType::PhysicalInput1 => "I",
             MirAddressType::PhysicalOutput1 => "Q",
+            MirAddressType::PhysicalCounter => "Z",
             MirAddressType::Memory1 => "M",
             MirAddressType::Memory8 => "MB",
             MirAddressType::Memory16 => "MW",

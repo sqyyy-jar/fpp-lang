@@ -7,35 +7,74 @@ pub struct S7Network {
 }
 
 pub enum S7Instruction {
+    /// `U op`
+    And { addr: S7Address },
+    /// `UN op`
+    AndNot { addr: S7Address },
+    /// `O op`
+    Or { addr: S7Address },
+    /// `ON op`
+    OrNot { addr: S7Address },
+    /// `X op`
+    Xor { addr: S7Address },
+    /// `XN op`
+    XorNot { addr: S7Address },
+    /// `U(`
+    AndStart,
+    /// `UN(`
+    AndNotStart,
+    /// `O(`
+    OrStart,
+    /// `ON(`
+    OrNotStart,
+    /// `X(`
+    XorStart,
+    /// `XN(`
+    XorNotStart,
+    /// `)`
+    End,
+    /// `= dst`
+    AssignBit { addr: S7Address },
+    /// `R dst`
+    ResetBit { addr: S7Address },
+    /// `S dst`
+    SetBit { addr: S7Address },
+    /// `N`
+    Not,
     /// `SET`
     Set,
     /// `CLR`
     Clear,
-    /// `N`
-    Not,
-    /// `U op`
-    And { op: S7BitAddress },
-    /// `O op`
-    Or { op: S7BitAddress },
-    /// `X op`
-    Xor { op: S7BitAddress },
-    /// `= dst`
-    WriteBit { dst: S7BitAddress },
-    /// `S dst`
-    SetBit { dst: S7BitAddress },
-    /// `R dst`
-    ResetBit { dst: S7BitAddress },
+    /// `SAVE`
+    Save,
+    /// `L addr`
+    CounterLoadInt { addr: S7Address },
+    /// `LC addr`
+    CounterLoadBcd { addr: S7Address },
+    /// `R addr`
+    CounterReset { addr: S7Address },
+    /// `S addr`
+    CounterSet { addr: S7Address },
+    /// `ZV addr`
+    CounterForward { addr: S7Address },
+    /// `ZR addr`
+    CounterBackward { addr: S7Address },
+    /// `T addr`
+    Transfer { addr: S7Address },
 }
 
-#[repr(u8)]
-pub enum S7BitAddressType {
-    Input,
-    Output,
-    Memory,
+pub enum S7AddressType {
+    Input1,
+    Output1,
+    Memory1,
+    Memory8,
+    Memory16,
+    Memory32,
+    Counter,
 }
 
-pub struct S7BitAddress {
-    pub r#type: S7BitAddressType,
+pub struct S7Address {
+    pub r#type: S7AddressType,
     pub ptr: u16,
     pub bit: u8,
 }
