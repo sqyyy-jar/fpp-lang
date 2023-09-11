@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::{
     error::{Error, Reason, Result},
-    symbol::{Symbol, KEYWORDS},
+    parser::symbol::{Symbol, KEYWORDS},
     util::{Quote, Q},
 };
 

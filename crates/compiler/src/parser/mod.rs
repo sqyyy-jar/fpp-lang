@@ -1,5 +1,8 @@
 //! This module is responsible for parsing an [Hir] from a [Lexer].
 
+pub mod lexer;
+pub mod symbol;
+
 use std::rc::Rc;
 
 use crate::{
@@ -11,9 +14,12 @@ use crate::{
         },
         Hir, HirLet, HirStatement, HirWrite,
     },
+    util::{parse_number, Quote, Q},
+};
+
+use self::{
     lexer::{Lexer, NULL},
     symbol::Symbol,
-    util::{parse_number, Quote, Q},
 };
 
 pub struct Parser {
