@@ -75,7 +75,7 @@ pub struct HirXor {
 #[derive(Debug)]
 pub struct HirVarRef;
 
-/// `name(args, ...)`
+/// `name(args, ...)`, may also be a statement
 #[derive(Debug)]
 pub struct HirCall {
     pub name: Quote,

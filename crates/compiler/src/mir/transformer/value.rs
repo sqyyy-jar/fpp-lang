@@ -16,7 +16,7 @@ use crate::{
     util::Quote,
 };
 
-fn transform_values(mir: &mut Mir, hir_values: Vec<HirValue>) -> Result<Vec<MirValue>> {
+pub fn transform_values(mir: &mut Mir, hir_values: Vec<HirValue>) -> Result<Vec<MirValue>> {
     let mut mir_values = Vec::with_capacity(hir_values.len());
     for value in hir_values {
         mir_values.push(transform_value(mir, value)?);

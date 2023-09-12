@@ -12,7 +12,7 @@ use crate::{
             HirAnd, HirBitAddress, HirBool, HirCall, HirNot, HirNumber, HirValue, HirValueType,
             HirVarRef,
         },
-        Hir, HirLet, HirStatement, HirWrite,
+        Hir, HirCallStatement, HirLetStatement, HirStatement, HirWriteStatement,
     },
     util::{parse_number, Quote, Q},
 };
@@ -138,8 +138,14 @@ impl Parser {
         ))
     }
 
-    /// Read function call (`out(0.0)`)
+    /// Read function call (`MB()`)
     fn read_call(&mut self, name: Quote) -> Result<HirValue> {
+        let (call, quote) = self.read_call_raw(name)?;
+        Ok(HirValue::new(quote, HirValueType::Call(call)))
+    }
+
+    /// Read function call (`out(0.0)`)
+    fn read_call_raw(&mut self, name: Quote) -> Result<(HirCall, Quote)> {
         let start = name.start;
         self.expect(Symbol::LeftParen)?;
         let mut args = Vec::with_capacity(1);
@@ -152,10 +158,7 @@ impl Parser {
         }
         let end = self.expect(Symbol::RightParen)?.end;
         let quote = Quote { start, end };
-        Ok(HirValue::new(
-            quote,
-            HirValueType::Call(HirCall { name, args }),
-        ))
+        Ok((HirCall { name, args }, quote))
     }
 
     /// Read unary operation (`not value`)
@@ -235,18 +238,35 @@ impl Parser {
         let value = self.read_value()?;
         let end = self.expect(Symbol::Semicolon)?.end;
         let quote = Quote { start, end };
-        Ok(HirStatement::Let(HirLet { quote, name, value }))
+        Ok(HirStatement::Let(HirLetStatement { quote, name, value }))
     }
 
     /// Read a [HirWrite]
-    fn read_write(&mut self) -> Result<HirStatement> {
-        let start = self.buffer.quote.start;
-        let name = self.expect(Symbol::Identifier)?;
+    fn read_write(&mut self, name: Quote) -> Result<HirStatement> {
+        let start = name.start;
         self.expect(Symbol::Equal)?;
         let value = self.read_value()?;
         let end = self.expect(Symbol::Semicolon)?.end;
         let quote = Quote { start, end };
-        Ok(HirStatement::Write(HirWrite { quote, name, value }))
+        Ok(HirStatement::Write(HirWriteStatement {
+            quote,
+            name,
+            value,
+        }))
+    }
+
+    /// Read a statement starting with an [Symbol::Identifier]
+    fn read_ident_statement(&mut self) -> Result<HirStatement> {
+        let ident = self.expect(Symbol::Identifier)?;
+        match self.buffer.value {
+            Symbol::Equal => self.read_write(ident),
+            Symbol::LeftParen => {
+                let (HirCall { name, args }, quote) = self.read_call_raw(ident)?;
+                self.expect(Symbol::Semicolon)?;
+                Ok(HirStatement::Call(HirCallStatement { quote, name, args }))
+            }
+            _ => self.error_buffer(Reason::UnexpectedSymbol),
+        }
     }
 
     pub fn parse(&mut self) -> Result<Hir> {
@@ -255,7 +275,7 @@ impl Parser {
         while self.buffer.value != Symbol::Null {
             hir.statements.push(match self.buffer.value {
                 Symbol::Let => self.read_let()?,
-                Symbol::Identifier => self.read_write()?,
+                Symbol::Identifier => self.read_ident_statement()?,
                 _ => self.error_buffer(Reason::UnexpectedSymbol)?,
             });
         }

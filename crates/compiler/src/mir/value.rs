@@ -13,11 +13,12 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub enum MirValue {
+    Unit,
     Bool(MirBool),
     Number(MirNumber),
     Address(MirAddress),
     VarRef(MirVarRef),
-    /// A series of operations expected to return a value
+    /// A series of operations expected to return a bit-value
     Ops(Rc<MirOps>),
     Object(Rc<dyn MirObject>),
     Not(Rc<MirNot>),
@@ -35,14 +36,14 @@ impl MirValue {
     /// - `value`: value written
     pub fn write(&self, mir: &mut Mir, quote: Quote, index: usize, value: MirValue) -> Result<()> {
         match self {
-            MirValue::Address(addr) => addr.write(mir, quote, index, value),
-            MirValue::VarRef(var) => {
+            Self::Address(addr) => addr.write(mir, quote, index, value),
+            Self::VarRef(var) => {
                 let var_value = mir.variables[var.index].value.clone();
                 var_value.write(mir, quote, index, value)?;
                 mir.variables[var.index].value = var_value;
                 Ok(())
             }
-            MirValue::Object(object) => object.write(mir, quote, index, value),
+            Self::Object(object) => object.write(mir, quote, index, value),
             _ => Err(Error::new(
                 mir.source.clone(),
                 quote,
@@ -53,15 +54,19 @@ impl MirValue {
 
     pub fn is_bit_readable(&self, mir: &Mir) -> bool {
         match self {
-            MirValue::Ops(_) => true,
-            MirValue::Address(addr) => addr.is_bit_address(),
-            MirValue::Bool(_) | MirValue::Number(_) | MirValue::Object(_) => false,
-            MirValue::VarRef(var) => mir.variables[var.index].value.is_bit_readable(mir),
-            MirValue::Not(not) => not.value.is_bit_readable(mir),
-            MirValue::And(and) => and.left.is_bit_readable(mir) && and.right.is_bit_readable(mir),
-            MirValue::Or(or) => or.left.is_bit_readable(mir) && or.right.is_bit_readable(mir),
-            MirValue::Xor(xor) => xor.left.is_bit_readable(mir) && xor.right.is_bit_readable(mir),
+            Self::Ops(_) => true,
+            Self::Address(addr) => addr.is_bit_address(),
+            Self::Unit | Self::Bool(_) | Self::Number(_) | Self::Object(_) => false,
+            Self::VarRef(var) => mir.variables[var.index].value.is_bit_readable(mir),
+            Self::Not(not) => not.value.is_bit_readable(mir),
+            Self::And(and) => and.left.is_bit_readable(mir) && and.right.is_bit_readable(mir),
+            Self::Or(or) => or.left.is_bit_readable(mir) && or.right.is_bit_readable(mir),
+            Self::Xor(xor) => xor.left.is_bit_readable(mir) && xor.right.is_bit_readable(mir),
         }
+    }
+
+    pub fn is_unit(&self) -> bool {
+        matches!(self, Self::Unit)
     }
 }
 

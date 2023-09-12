@@ -178,13 +178,17 @@ fn transform_instructions(
 }
 
 fn transform_action(lir: &mut S7Lir, mir: &Mir, action: &MirAction) -> Result<()> {
+    let network = &mut lir.networks[0];
+    // Clear `/ER`
+    network.instructions.push(S7Instruction::Clear);
     match action {
+        MirAction::Raw(raw) => {
+            transform_instructions(mir, &raw.instructions, &mut network.instructions)?;
+        }
         MirAction::Output(output) => {
             let addr = assert_bit(mir, output.address)?;
-            transform_instructions(mir, &output.instructions, &mut lir.networks[0].instructions)?;
-            lir.networks[0]
-                .instructions
-                .push(S7Instruction::AssignBit { addr });
+            transform_instructions(mir, &output.instructions, &mut network.instructions)?;
+            network.instructions.push(S7Instruction::AssignBit { addr });
         }
     }
     Ok(())

@@ -77,6 +77,7 @@ impl MirInstructionWriter {
 
     pub fn write_value(&mut self, mir: &mut Mir, value: &MirValue) -> Result<()> {
         match value {
+            MirValue::Unit => todo!(),
             MirValue::Bool(_) => todo!(),
             MirValue::Number(_) => todo!(),
             MirValue::Address(addr) => self.write_addr(*addr),

@@ -140,7 +140,13 @@ pub struct MirVariable {
 
 #[derive(Debug)]
 pub enum MirAction {
+    Raw(MirRawAction),
     Output(MirOutputAction),
+}
+
+#[derive(Debug)]
+pub struct MirRawAction {
+    pub instructions: Vec<MirInstruction>,
 }
 
 #[derive(Debug)]

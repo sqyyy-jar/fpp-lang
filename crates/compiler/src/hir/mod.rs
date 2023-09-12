@@ -23,13 +23,14 @@ impl Hir {
 
 #[derive(Debug)]
 pub enum HirStatement {
-    Let(HirLet),
-    Write(HirWrite),
+    Let(HirLetStatement),
+    Write(HirWriteStatement),
+    Call(HirCallStatement),
 }
 
 /// `let name = value;`
 #[derive(Debug)]
-pub struct HirLet {
+pub struct HirLetStatement {
     pub quote: Quote,
     pub name: Quote,
     pub value: HirValue,
@@ -37,8 +38,16 @@ pub struct HirLet {
 
 /// `name = value;`
 #[derive(Debug)]
-pub struct HirWrite {
+pub struct HirWriteStatement {
     pub quote: Quote,
     pub name: Quote,
     pub value: HirValue,
+}
+
+/// `abc();`
+#[derive(Debug)]
+pub struct HirCallStatement {
+    pub quote: Quote,
+    pub name: Quote,
+    pub args: Vec<HirValue>,
 }
