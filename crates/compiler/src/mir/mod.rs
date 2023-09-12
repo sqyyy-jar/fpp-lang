@@ -63,51 +63,71 @@ pub struct MirMemory {
 }
 
 impl MirMemory {
+    pub fn byte_offset(&self) -> usize {
+        if self.allocated_bits % 8 != 0 {
+            self.allocated_bits / 8 + 1
+        } else {
+            self.allocated_bits / 8
+        }
+    }
+
+    pub fn usage(&self) -> usize {
+        self.byte_offset() + self.allocated_bytes
+    }
+
+    pub fn can_alloc_bit(&self) -> bool {
+        self.allocated_bits % 8 != 0 || self.usage() < 65535
+    }
+
     pub fn alloc1(&mut self) -> Option<MirAddress> {
-        let ptr = self.allocated_bits;
-        if ptr == 0xffff_ffff {
+        if !self.can_alloc_bit() {
             return None;
         }
+        let ptr = self.allocated_bits;
         self.allocated_bits += 1;
         Some(MirAddress {
             r#type: value::MirAddressType::Memory1,
-            ptr: ptr as u32,
+            ptr: (ptr / 8) as u16,
+            bit: (ptr % 8) as u8,
         })
     }
 
     pub fn alloc8(&mut self) -> Option<MirAddress> {
-        let ptr = self.allocated_bytes;
-        if ptr == 0xffff_ffff {
+        if self.usage() >= 65535 {
             return None;
         }
+        let ptr = self.allocated_bytes;
         self.allocated_bytes += 1;
         Some(MirAddress {
             r#type: value::MirAddressType::Memory8,
-            ptr: ptr as u32,
+            ptr: ptr as u16,
+            bit: 0,
         })
     }
 
     pub fn alloc16(&mut self) -> Option<MirAddress> {
-        let ptr = self.allocated_bytes;
-        if ptr == 0xffff_ffff {
+        if self.usage() >= 65534 {
             return None;
         }
+        let ptr = self.allocated_bytes;
         self.allocated_bytes += 2;
         Some(MirAddress {
             r#type: value::MirAddressType::Memory16,
-            ptr: ptr as u32,
+            ptr: ptr as u16,
+            bit: 0,
         })
     }
 
     pub fn alloc32(&mut self) -> Option<MirAddress> {
-        let ptr = self.allocated_bytes;
-        if ptr == 0xffff_ffff {
+        if self.usage() >= 65532 {
             return None;
         }
+        let ptr = self.allocated_bytes;
         self.allocated_bytes += 4;
         Some(MirAddress {
             r#type: value::MirAddressType::Memory32,
-            ptr: ptr as u32,
+            ptr: ptr as u16,
+            bit: 0,
         })
     }
 }
@@ -129,7 +149,7 @@ pub struct MirOutputAction {
     pub instructions: Vec<MirInstruction>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum MirInstruction {
     /// Dummy instruction
     Dummy,

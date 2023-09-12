@@ -39,15 +39,16 @@ fn transform_address(
     quote: Quote,
     HirBitAddress { char, ptr, bit }: HirBitAddress,
 ) -> Result<MirValue> {
-    let ptr = ptr as u32 | (bit as u32) << 16;
     match char {
         b'I' | b'E' => Ok(MirValue::Address(MirAddress {
             r#type: MirAddressType::PhysicalInput1,
             ptr,
+            bit,
         })),
         b'Q' | b'A' => Ok(MirValue::Address(MirAddress {
             r#type: MirAddressType::PhysicalOutput1,
             ptr,
+            bit,
         })),
         _ => Err(Error::new(
             mir.source.clone(),

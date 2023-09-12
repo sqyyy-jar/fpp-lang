@@ -16,7 +16,7 @@ pub struct MirInstructionWriter {
 
 impl MirInstructionWriter {
     fn write_addr(&mut self, addr: MirAddress) -> Result<()> {
-        assert!(addr.is_bit());
+        assert!(addr.is_bit_address());
         self.instructions.push(MirInstruction::And { addr });
         Ok(())
     }

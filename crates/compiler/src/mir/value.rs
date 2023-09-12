@@ -54,7 +54,7 @@ impl MirValue {
     pub fn is_bit_readable(&self, mir: &Mir) -> bool {
         match self {
             MirValue::Ops(_) => true,
-            MirValue::Address(addr) => addr.is_bit(),
+            MirValue::Address(addr) => addr.is_bit_address(),
             MirValue::Bool(_) | MirValue::Number(_) | MirValue::Object(_) => false,
             MirValue::VarRef(var) => mir.variables[var.index].value.is_bit_readable(mir),
             MirValue::Not(not) => not.value.is_bit_readable(mir),
@@ -106,7 +106,8 @@ pub enum MirAddressType {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct MirAddress {
     pub r#type: MirAddressType,
-    pub ptr: u32,
+    pub ptr: u16,
+    pub bit: u8,
 }
 
 impl MirAddress {
@@ -148,12 +149,19 @@ impl MirAddress {
         !self.is_physical()
     }
 
-    pub fn is_bit(self) -> bool {
+    pub fn is_bit_address(self) -> bool {
         matches!(
             self.r#type,
             MirAddressType::PhysicalInput1
                 | MirAddressType::PhysicalOutput1
                 | MirAddressType::Memory1
+        )
+    }
+
+    pub fn is_byte_address(self) -> bool {
+        matches!(
+            self.r#type,
+            MirAddressType::Memory8 | MirAddressType::Memory16 | MirAddressType::Memory32
         )
     }
 }
@@ -169,10 +177,8 @@ impl Debug for MirAddress {
             MirAddressType::Memory16 => "MW",
             MirAddressType::Memory32 => "MD",
         };
-        if self.is_bit() && self.is_physical() {
-            let ptr = self.ptr & 0xffff;
-            let bit = self.ptr >> 16;
-            write!(f, "{prefix}{ptr}.{bit}")
+        if self.is_bit_address() && self.is_physical() {
+            write!(f, "{prefix}{}.{}", self.ptr, self.bit)
         } else {
             write!(f, "{prefix}{}", self.ptr)
         }

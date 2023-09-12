@@ -1,7 +1,11 @@
+pub mod transformer;
+
+#[derive(Default)]
 pub struct S7Lir {
     pub networks: Vec<S7Network>,
 }
 
+#[derive(Default)]
 pub struct S7Network {
     pub instructions: Vec<S7Instruction>,
 }
@@ -63,6 +67,7 @@ pub enum S7Instruction {
     Transfer { addr: S7Address },
 }
 
+#[derive(Clone, Copy)]
 pub enum S7AddressType {
     Input1,
     Output1,
@@ -73,6 +78,7 @@ pub enum S7AddressType {
     Counter,
 }
 
+#[derive(Clone, Copy)]
 pub struct S7Address {
     pub r#type: S7AddressType,
     pub ptr: u16,
