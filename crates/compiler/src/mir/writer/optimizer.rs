@@ -22,7 +22,7 @@ fn fill_dummy(slice: &mut [MirInstruction]) {
 
 fn optimize_brackets(slice: &mut [MirInstruction], mut index: usize, bracket_term: bool) -> usize {
     while index < slice.len() {
-        let start = slice[index].clone();
+        let start = slice[index];
         if start.is_dummy() {
             index += 1;
             continue;
@@ -45,7 +45,7 @@ fn optimize_brackets(slice: &mut [MirInstruction], mut index: usize, bracket_ter
             index = term_end + 1;
             continue;
         }
-        let inner = get_non_dummy(term, 0).clone();
+        let inner = *get_non_dummy(term, 0);
         if !matches!(inner, MirInstruction::And { .. }) {
             continue;
         }
