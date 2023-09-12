@@ -50,8 +50,8 @@ fn assert_bit(mir: &Mir, addr: MirAddress) -> Result<S7Address> {
     Ok(transform_address(mir, addr))
 }
 
-fn assert_byte(mir: &Mir, addr: MirAddress) -> Result<S7Address> {
-    if !addr.is_byte_address() {
+fn assert_any_byte(mir: &Mir, addr: MirAddress) -> Result<S7Address> {
+    if !addr.is_any_byte_address() {
         return Err(Error::NonBitAddress);
     }
     Ok(transform_address(mir, addr))
@@ -166,7 +166,7 @@ fn transform_instructions(
                 dst.push(S7Instruction::CounterBackward { addr });
             }
             MirInstruction::Transfer { addr } => {
-                let addr = assert_byte(mir, addr)?;
+                let addr = assert_any_byte(mir, addr)?;
                 dst.push(S7Instruction::Transfer { addr });
             }
         }
@@ -180,9 +180,14 @@ fn transform_instructions(
 fn transform_action(lir: &mut S7Lir, mir: &Mir, action: &MirAction) -> Result<()> {
     match action {
         MirAction::Output(output) => {
-            transform_instructions(mir, &output.instructions, &mut lir.networks[0].instructions)
+            let addr = assert_bit(mir, output.address)?;
+            transform_instructions(mir, &output.instructions, &mut lir.networks[0].instructions)?;
+            lir.networks[0]
+                .instructions
+                .push(S7Instruction::AssignBit { addr });
         }
     }
+    Ok(())
 }
 
 pub fn transform(mir: &Mir) -> Result<S7Lir> {

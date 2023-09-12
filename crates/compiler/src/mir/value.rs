@@ -149,6 +149,7 @@ impl MirAddress {
         !self.is_physical()
     }
 
+    /// Checks if the address points to a `BIT`
     pub fn is_bit_address(self) -> bool {
         matches!(
             self.r#type,
@@ -158,7 +159,8 @@ impl MirAddress {
         )
     }
 
-    pub fn is_byte_address(self) -> bool {
+    /// Checks if the address points to a `BYTE`, `WORD` or `DWORD`
+    pub fn is_any_byte_address(self) -> bool {
         matches!(
             self.r#type,
             MirAddressType::Memory8 | MirAddressType::Memory16 | MirAddressType::Memory32
