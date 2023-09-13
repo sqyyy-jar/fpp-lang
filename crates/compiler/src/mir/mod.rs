@@ -17,8 +17,8 @@ pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
     b"MB" => builtin::memory::builtin_mb,
     b"MW" => builtin::memory::builtin_mw,
     b"MD" => builtin::memory::builtin_md,
-    b"rs" => builtin::flipflops::builtin_rs,
-    b"sr" => builtin::flipflops::builtin_sr,
+    b"rs" => builtin::flipflop::builtin_rs,
+    b"sr" => builtin::flipflop::builtin_sr,
 };
 
 /// MIR Function
