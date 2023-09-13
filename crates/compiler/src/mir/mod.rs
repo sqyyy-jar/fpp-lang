@@ -147,7 +147,7 @@ impl MirAllocator {
 
     pub fn alloc_counter(&mut self) -> Option<MirAddress> {
         let ptr = self.allocated_counters;
-        if ptr >= 65535 {
+        if ptr == 65535 {
             return None;
         }
         self.allocated_counters += 1;

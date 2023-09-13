@@ -19,7 +19,7 @@ pub struct Lexer {
 impl Lexer {
     pub fn new(source: Rc<str>) -> Self {
         assert!(
-            !source.contains(NULL as char),
+            !source.contains(NULL),
             "Source must not contain a null-character."
         );
         Self { source, index: 0 }

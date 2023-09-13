@@ -21,7 +21,7 @@ impl WriteAwl for S7Network {
     fn write_awl(&self, out: &mut impl Write) -> std::io::Result<()> {
         for instruction in &self.instructions {
             instruction.write_awl(out)?;
-            write!(out, "\n")?;
+            writeln!(out)?;
         }
         Ok(())
     }
