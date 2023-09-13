@@ -1,13 +1,13 @@
 use phf::{phf_map, Map};
 
-pub const KEYWORDS: Map<&[u8], Symbol> = phf_map! {
-    b"let" => Symbol::Let,
-    b"not" => Symbol::Not,
-    b"and" => Symbol::And,
-    b"or" => Symbol::Or,
-    b"xor" => Symbol::Xor,
-    b"true" => Symbol::True,
-    b"false" => Symbol::False,
+pub const KEYWORDS: Map<&str, Symbol> = phf_map! {
+    "let" => Symbol::Let,
+    "not" => Symbol::Not,
+    "and" => Symbol::And,
+    "or" => Symbol::Or,
+    "xor" => Symbol::Xor,
+    "true" => Symbol::True,
+    "false" => Symbol::False,
 };
 
 /// A part of the parsed source

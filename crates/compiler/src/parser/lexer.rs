@@ -8,36 +8,42 @@ use crate::{
     util::{Quote, Q},
 };
 
-pub const NULL: u8 = 0;
+pub const NULL: char = '\0';
 
 pub struct Lexer {
-    source: Rc<[u8]>,
+    source: Rc<str>,
     index: usize,
 }
 
 /// General lexer functions
 impl Lexer {
-    pub fn new(source: Rc<[u8]>) -> Self {
+    pub fn new(source: Rc<str>) -> Self {
         assert!(
-            !source.contains(&NULL),
+            !source.contains(NULL as char),
             "Source must not contain a null-character."
         );
         Self { source, index: 0 }
     }
 
     /// Get the current char
-    fn get(&self) -> u8 {
-        self.source.get(self.index).copied().unwrap_or(NULL)
+    fn get(&self) -> char {
+        self.source
+            .get(self.index..)
+            .and_then(|it| it.chars().next())
+            .unwrap_or(NULL)
     }
 
     /// Get the next char
-    fn peek(&self) -> u8 {
-        self.source.get(self.index + 1).copied().unwrap_or(NULL)
+    fn peek(&self) -> char {
+        self.source
+            .get(self.index + self.get().len_utf8()..)
+            .and_then(|it| it.chars().next())
+            .unwrap_or(NULL)
     }
 
     /// Increment the current index
     fn advance(&mut self) {
-        self.index += 1;
+        self.index += self.get().len_utf8();
     }
 
     /// Quote the symbol
@@ -73,7 +79,7 @@ impl Lexer {
         while self.get() != NULL {
             let c = self.get();
             self.advance();
-            if matches!(c, b'\n' | b'\r') {
+            if matches!(c, '\n' | '\r') {
                 break;
             }
         }
@@ -91,10 +97,7 @@ impl Lexer {
             self.advance();
         }
         let slice = &self.source[start_index..self.index];
-        if unsafe { std::str::from_utf8_unchecked(slice) }
-            .parse::<usize>()
-            .is_err()
-        {
+        if slice.parse::<usize>().is_err() {
             return self.error(Reason::InvalidNumber, start_index);
         }
         self.quote(Symbol::Number, start_index)
@@ -102,7 +105,7 @@ impl Lexer {
 
     fn read_identifier(&mut self) -> Result<Q<Symbol>> {
         let start_index = self.index;
-        while matches!(self.get(), b'_' | b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9') {
+        while matches!(self.get(), '_' | 'a'..='z' | 'A'..='Z' | '0'..='9') {
             self.advance();
         }
         let slice = &self.source[start_index..self.index];
@@ -118,24 +121,24 @@ impl Lexer {
             let start_index = self.index;
             return match self.get() {
                 NULL => Ok(Q::new(Symbol::Null, start_index, self.index)),
-                b';' => self.quote_next(Symbol::Semicolon, start_index),
-                b'=' => self.quote_next(Symbol::Equal, start_index),
-                b'.' => self.quote_next(Symbol::Punct, start_index),
-                b',' => self.quote_next(Symbol::Comma, start_index),
-                b'(' => self.quote_next(Symbol::LeftParen, start_index),
-                b')' => self.quote_next(Symbol::RightParen, start_index),
-                b'!' => self.quote_next(Symbol::Not, start_index),
-                b'&' => self.quote_next(Symbol::And, start_index),
-                b'|' => self.quote_next(Symbol::Or, start_index),
-                b'^' => self.quote_next(Symbol::Xor, start_index),
-                b'0'..=b'9' => self.read_number(),
-                b'_' | b'a'..=b'z' | b'A'..=b'Z' => self.read_identifier(),
-                b'#' => {
+                ';' => self.quote_next(Symbol::Semicolon, start_index),
+                '=' => self.quote_next(Symbol::Equal, start_index),
+                '.' => self.quote_next(Symbol::Punct, start_index),
+                ',' => self.quote_next(Symbol::Comma, start_index),
+                '(' => self.quote_next(Symbol::LeftParen, start_index),
+                ')' => self.quote_next(Symbol::RightParen, start_index),
+                '!' => self.quote_next(Symbol::Not, start_index),
+                '&' => self.quote_next(Symbol::And, start_index),
+                '|' => self.quote_next(Symbol::Or, start_index),
+                '^' => self.quote_next(Symbol::Xor, start_index),
+                '0'..='9' => self.read_number(),
+                '_' | 'a'..='z' | 'A'..='Z' => self.read_identifier(),
+                '#' => {
                     self.skip_line();
                     continue;
                 }
-                b'/' => {
-                    if self.peek() != b'/' {
+                '/' => {
+                    if self.peek() != '/' {
                         return self.error_next(Reason::UnexpectedCharacter, start_index);
                     }
                     self.skip_line();

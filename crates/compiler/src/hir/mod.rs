@@ -8,12 +8,12 @@ use self::value::HirValue;
 
 #[derive(Debug)]
 pub struct Hir {
-    pub source: Rc<[u8]>,
+    pub source: Rc<str>,
     pub statements: Vec<HirStatement>,
 }
 
 impl Hir {
-    pub fn new(source: Rc<[u8]>) -> Self {
+    pub fn new(source: Rc<str>) -> Self {
         Self {
             source,
             statements: Vec::new(),

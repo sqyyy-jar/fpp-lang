@@ -5,13 +5,13 @@ use crate::util::Quote;
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub struct Error {
-    source: Rc<[u8]>,
+    source: Rc<str>,
     quote: Quote,
     reason: Reason,
 }
 
 impl Error {
-    pub fn new(source: Rc<[u8]>, quote: Quote, reason: Reason) -> Self {
+    pub fn new(source: Rc<str>, quote: Quote, reason: Reason) -> Self {
         Self {
             source,
             quote,
@@ -25,9 +25,7 @@ impl Debug for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Error")
             .field("reason", &self.reason)
-            .field("source", &unsafe {
-                std::str::from_utf8_unchecked(&self.source[&self.quote])
-            })
+            .field("source", &&self.source[&self.quote])
             .finish()
     }
 }

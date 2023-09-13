@@ -9,7 +9,6 @@ use fpp_compiler::{
 fn main() {
     let input = read_to_string(args().nth(1).expect("Input file"))
         .expect("Readable input file")
-        .as_bytes()
         .into();
     let mut parser = Parser::new(input);
     let hir = parser.parse().expect("HIR");

@@ -42,17 +42,16 @@ impl Debug for Quote {
     }
 }
 
-impl Index<&Quote> for [u8] {
-    type Output = [u8];
+impl Index<&Quote> for str {
+    type Output = str;
 
     fn index(&self, index: &Quote) -> &Self::Output {
         &self[index.start..index.end]
     }
 }
 
-pub fn parse_number(source: &Rc<[u8]>, quote: &Quote) -> Result<usize> {
-    std::str::from_utf8(&source[quote])
-        .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))?
+pub fn parse_number(source: &Rc<str>, quote: &Quote) -> Result<usize> {
+    source[quote]
         .parse()
         .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))
 }

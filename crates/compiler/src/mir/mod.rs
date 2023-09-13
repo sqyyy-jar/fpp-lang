@@ -19,19 +19,19 @@ pub mod transformer;
 pub mod value;
 pub mod writer;
 
-pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
-    b"M" => builtin_alloc1,
-    b"alloc1" => builtin_alloc1,
-    b"MB" => builtin_alloc8,
-    b"alloc8" => builtin_alloc8,
-    b"MW" => builtin_alloc16,
-    b"alloc16" => builtin_alloc16,
-    b"MD" => builtin_alloc32,
-    b"alloc32" => builtin_alloc32,
-    b"Z" => builtin_counter,
-    b"counter" => builtin_counter,
-    b"rs" => builtin_rs,
-    b"sr" => builtin_sr,
+pub const BUILTIN_FUNCTIONS: Map<&str, MirFunction> = phf_map! {
+    "M" => builtin_alloc1,
+    "alloc1" => builtin_alloc1,
+    "MB" => builtin_alloc8,
+    "alloc8" => builtin_alloc8,
+    "MW" => builtin_alloc16,
+    "alloc16" => builtin_alloc16,
+    "MD" => builtin_alloc32,
+    "alloc32" => builtin_alloc32,
+    "Z" => builtin_counter,
+    "counter" => builtin_counter,
+    "rs" => builtin_rs,
+    "sr" => builtin_sr,
 };
 
 /// MIR Function
@@ -43,14 +43,14 @@ pub type MirFunction = fn(&mut Mir, quote: Quote, args: &[MirValue]) -> Result<M
 
 #[derive(Debug)]
 pub struct Mir {
-    pub source: Rc<[u8]>,
+    pub source: Rc<str>,
     pub allocator: MirAllocator,
     pub variables: Vec<MirVariable>,
     pub actions: Vec<MirAction>,
 }
 
 impl Mir {
-    pub fn new(source: Rc<[u8]>) -> Self {
+    pub fn new(source: Rc<str>) -> Self {
         Self {
             source,
             allocator: MirAllocator::default(),
@@ -59,7 +59,7 @@ impl Mir {
         }
     }
 
-    pub fn find_var(&self, name: &[u8]) -> Option<usize> {
+    pub fn find_var(&self, name: &str) -> Option<usize> {
         for (i, var) in self.variables.iter().enumerate() {
             if name == &self.source[&var.name] {
                 return Some(i);

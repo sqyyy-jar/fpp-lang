@@ -23,14 +23,14 @@ use self::{
 };
 
 pub struct Parser {
-    source: Rc<[u8]>,
+    source: Rc<str>,
     lexer: Lexer,
     buffer: Q<Symbol>,
 }
 
 /// General parser functions
 impl Parser {
-    pub fn new(source: Rc<[u8]>) -> Self {
+    pub fn new(source: Rc<str>) -> Self {
         Self {
             source: source.clone(),
             lexer: Lexer::new(source),
@@ -77,18 +77,19 @@ impl Parser {
 
 /// Parsing specific functions
 impl Parser {
-    fn parse_address_prefix(&self, prefix: &[u8], start: usize, end: usize) -> Result<(u8, usize)> {
+    fn parse_address_prefix(&self, prefix: &str, start: usize, end: usize) -> Result<(u8, usize)> {
         if prefix.len() < 2 {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
-        let char = prefix[0];
-        let Ok(slice_x) = std::str::from_utf8(&prefix[1..]) else {
+        let char = prefix.chars().next();
+        let num = prefix.get(1..);
+        if char.is_none() || num.is_none() {
+            return self.error(Reason::InvalidBitAddressSymbol, start, end);
+        }
+        let Ok(x) = num.unwrap().parse() else {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         };
-        let Ok(x) = slice_x.parse() else {
-            return self.error(Reason::InvalidBitAddressSymbol, start, end);
-        };
-        Ok((char, x))
+        Ok((char.unwrap() as u8, x))
     }
 
     /// Read raw address (`0.0`)
@@ -108,7 +109,7 @@ impl Parser {
         Ok(HirValue::new(
             quote,
             HirValueType::BitAddress(HirBitAddress {
-                char: NULL,
+                char: NULL as u8,
                 ptr: ptr as u16,
                 bit: bit as u8,
             }),
