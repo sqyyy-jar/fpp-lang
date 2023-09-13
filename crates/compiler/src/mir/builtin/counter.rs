@@ -6,8 +6,9 @@ use crate::{
 
 use super::assertions::assert_args_len;
 
-/// Allocate memory bit
+/// Allocate counter
 pub fn builtin_counter(mir: &mut Mir, quote: Quote, args: &[MirValue]) -> Result<MirValue> {
     assert_args_len(mir, &quote, args, 0)?;
-    todo!()
+    let addr = mir.allocator.alloc_counter().expect("Allocate counter");
+    Ok(MirValue::Address(addr))
 }

@@ -4,7 +4,14 @@ use phf::{phf_map, Map};
 
 use crate::{error::Result, util::Quote};
 
-use self::value::{MirAddress, MirValue};
+use self::{
+    builtin::{
+        counter::builtin_counter,
+        flipflop::{builtin_rs, builtin_sr},
+        memory::{builtin_alloc1, builtin_alloc16, builtin_alloc32, builtin_alloc8},
+    },
+    value::{MirAddress, MirAddressType, MirValue},
+};
 
 pub mod builtin;
 pub mod ops;
@@ -13,12 +20,18 @@ pub mod value;
 pub mod writer;
 
 pub const BUILTIN_FUNCTIONS: Map<&[u8], MirFunction> = phf_map! {
-    b"M" => builtin::memory::builtin_m,
-    b"MB" => builtin::memory::builtin_mb,
-    b"MW" => builtin::memory::builtin_mw,
-    b"MD" => builtin::memory::builtin_md,
-    b"rs" => builtin::flipflop::builtin_rs,
-    b"sr" => builtin::flipflop::builtin_sr,
+    b"M" => builtin_alloc1,
+    b"alloc1" => builtin_alloc1,
+    b"MB" => builtin_alloc8,
+    b"alloc8" => builtin_alloc8,
+    b"MW" => builtin_alloc16,
+    b"alloc16" => builtin_alloc16,
+    b"MD" => builtin_alloc32,
+    b"alloc32" => builtin_alloc32,
+    b"Z" => builtin_counter,
+    b"counter" => builtin_counter,
+    b"rs" => builtin_rs,
+    b"sr" => builtin_sr,
 };
 
 /// MIR Function
@@ -31,7 +44,7 @@ pub type MirFunction = fn(&mut Mir, quote: Quote, args: &[MirValue]) -> Result<M
 #[derive(Debug)]
 pub struct Mir {
     pub source: Rc<[u8]>,
-    pub memory: MirMemory,
+    pub allocator: MirAllocator,
     pub variables: Vec<MirVariable>,
     pub actions: Vec<MirAction>,
 }
@@ -40,7 +53,7 @@ impl Mir {
     pub fn new(source: Rc<[u8]>) -> Self {
         Self {
             source,
-            memory: MirMemory::default(),
+            allocator: MirAllocator::default(),
             variables: Vec::new(),
             actions: Vec::new(),
         }
@@ -57,12 +70,13 @@ impl Mir {
 }
 
 #[derive(Debug, Default)]
-pub struct MirMemory {
+pub struct MirAllocator {
     pub allocated_bits: usize,
     pub allocated_bytes: usize,
+    pub allocated_counters: u16,
 }
 
-impl MirMemory {
+impl MirAllocator {
     pub fn byte_offset(&self) -> usize {
         if self.allocated_bits % 8 != 0 {
             self.allocated_bits / 8 + 1
@@ -127,6 +141,19 @@ impl MirMemory {
         Some(MirAddress {
             r#type: value::MirAddressType::Memory32,
             ptr: ptr as u16,
+            bit: 0,
+        })
+    }
+
+    pub fn alloc_counter(&mut self) -> Option<MirAddress> {
+        let ptr = self.allocated_counters;
+        if ptr >= 65535 {
+            return None;
+        }
+        self.allocated_counters += 1;
+        Some(MirAddress {
+            r#type: MirAddressType::PhysicalCounter,
+            ptr,
             bit: 0,
         })
     }

@@ -178,7 +178,7 @@ impl Debug for MirAddress {
         let prefix = match self.r#type {
             MirAddressType::PhysicalInput1 => "I",
             MirAddressType::PhysicalOutput1 => "Q",
-            MirAddressType::PhysicalCounter => "Z",
+            MirAddressType::PhysicalCounter => "C",
             MirAddressType::Memory1 => "M",
             MirAddressType::Memory8 => "MB",
             MirAddressType::Memory16 => "MW",

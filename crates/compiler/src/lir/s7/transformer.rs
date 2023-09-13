@@ -35,7 +35,7 @@ fn transform_address(mir: &Mir, addr: MirAddress) -> S7Address {
         MirAddressType::Memory32 => S7AddressType::Memory32,
     };
     let ptr = if addr.is_virtual() {
-        mir.memory.byte_offset() as u16 + addr.ptr
+        mir.allocator.byte_offset() as u16 + addr.ptr
     } else {
         addr.ptr
     };

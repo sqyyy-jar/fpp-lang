@@ -173,7 +173,7 @@ impl WriteAwl for S7AddressType {
             Self::Memory8 => "MB",
             Self::Memory16 => "MW",
             Self::Memory32 => "MD",
-            Self::Counter => "Z",
+            Self::Counter => "C",
         };
         write!(out, "{prefix}")
     }
