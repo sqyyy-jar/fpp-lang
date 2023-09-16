@@ -9,3 +9,4 @@ path = "src/main.rs"
 
 [dependencies]
 fpp-compiler = { path = "../compiler" }
+messages = { path = "../messages" }

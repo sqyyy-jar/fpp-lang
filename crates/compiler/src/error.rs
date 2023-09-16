@@ -1,4 +1,9 @@
-use std::{fmt::Debug, rc::Rc};
+use std::{
+    fmt::{Debug, Display},
+    rc::Rc,
+};
+
+use messages::message::{Message, MessageContent};
 
 use crate::util::Quote;
 
@@ -18,15 +23,41 @@ impl Error {
             reason,
         }
     }
+
+    pub fn message(&self) -> &str {
+        match self.reason {
+            Reason::UnexpectedCharacter => "this character was not expected",
+            Reason::InvalidNumber => "this number is not valid",
+            Reason::UnexpectedSymbol => "this symbol was not expected",
+            Reason::InvalidBitAddressSymbol => "this bit-address is invalid",
+            Reason::InvalidUnaryOperation => "this unary operation is invalid",
+            Reason::NoWriteHandler => "there is no write handler available for this variable",
+            Reason::InvalidArgsCount => "the amount of args does not match the function signature",
+            Reason::InvalidArgType => "the arguments do not match the function signature",
+            Reason::UnknownVariable => "this variable does not exist",
+            Reason::UnknownFunction => "this function does not exist",
+            Reason::UnknownBitAddressType => "this bit-address type is invalid",
+            Reason::ValueNotBitReadable => "this value is not readable",
+        }
+    }
+
+    pub fn content(&self) -> Option<MessageContent> {
+        // todo
+        MessageContent::parse("<source>", &self.source, self.quote.start, self.quote.end)
+    }
+
+    pub fn to_message(&self) -> Option<Message> {
+        let content = self.content()?;
+        Some(Message::error(content, self.message()))
+    }
 }
 
-/// **NOTE: This Debug implementation will be removed in the future**
-impl Debug for Error {
+impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Error")
-            .field("reason", &self.reason)
-            .field("source", &&self.source[&self.quote])
-            .finish()
+        let Some(message) = self.to_message() else {
+            return Ok(());
+        };
+        message.fmt(f)
     }
 }
 

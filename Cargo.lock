@@ -7,13 +7,22 @@ name = "fpp-cli"
 version = "0.1.0"
 dependencies = [
  "fpp-compiler",
+ "messages",
 ]
 
 [[package]]
 name = "fpp-compiler"
 version = "0.1.0"
 dependencies = [
+ "messages",
  "phf",
+]
+
+[[package]]
+name = "messages"
+version = "0.1.0"
+dependencies = [
+ "yansi",
 ]
 
 [[package]]
@@ -113,3 +122,9 @@ name = "unicode-ident"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
+
+[[package]]
+name = "yansi"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"

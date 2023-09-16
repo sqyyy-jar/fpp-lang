@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["./crates/compiler", "./crates/cli"]
+members = ["./crates/compiler", "./crates/cli", "./crates/messages"]
