@@ -8,5 +8,6 @@ name = "fpp"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4.4.3", features = ["cargo"] }
 fpp-compiler = { path = "../compiler" }
 messages = { path = "../messages" }
