@@ -34,19 +34,25 @@ impl MirValue {
     /// - `quote`: quote of the equals symbol
     /// - `index`: index of the variable to be written to
     /// - `value`: value written
-    pub fn write(&self, mir: &mut Mir, quote: Quote, index: usize, value: MirValue) -> Result<()> {
+    pub fn write(
+        &self,
+        mir: &mut Mir,
+        name_quote: Quote,
+        value_quote: Quote,
+        value: MirValue,
+    ) -> Result<()> {
         match self {
-            Self::Address(addr) => addr.write(mir, quote, index, value),
+            Self::Address(addr) => addr.write(mir, name_quote, value_quote, value),
             Self::VarRef(var) => {
                 let var_value = mir.variables[var.index].value.clone();
-                var_value.write(mir, quote, index, value)?;
+                var_value.write(mir, name_quote, value_quote, value)?;
                 mir.variables[var.index].value = var_value;
                 Ok(())
             }
-            Self::Object(object) => object.write(mir, quote, index, value),
+            Self::Object(object) => object.write(mir, name_quote, value_quote, value),
             _ => Err(Error::new(
                 mir.source.clone(),
-                quote,
+                name_quote,
                 Reason::NoWriteHandler,
             )),
         }
@@ -77,10 +83,16 @@ pub trait MirObject: Debug {
     /// - `quote`: quote of the equals symbol
     /// - `index`: index of the variable to be written to
     /// - `value`: value written
-    fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, _value: MirValue) -> Result<()> {
+    fn write(
+        &self,
+        mir: &mut Mir,
+        name_quote: Quote,
+        _value_quote: Quote,
+        _value: MirValue,
+    ) -> Result<()> {
         Err(Error::new(
             mir.source.clone(),
-            quote,
+            name_quote,
             Reason::NoWriteHandler,
         ))
     }
@@ -116,18 +128,24 @@ pub struct MirAddress {
 }
 
 impl MirAddress {
-    pub fn write(&self, mir: &mut Mir, quote: Quote, _index: usize, value: MirValue) -> Result<()> {
+    pub fn write(
+        &self,
+        mir: &mut Mir,
+        name_quote: Quote,
+        value_quote: Quote,
+        value: MirValue,
+    ) -> Result<()> {
         if self.r#type != MirAddressType::PhysicalOutput1 {
             return Err(Error::new(
                 mir.source.clone(),
-                quote,
+                name_quote,
                 Reason::NoWriteHandler,
             ));
         }
         if !value.is_bit_readable(mir) {
             return Err(Error::new(
                 mir.source.clone(),
-                quote,
+                value_quote,
                 Reason::ValueNotBitReadable,
             ));
         }

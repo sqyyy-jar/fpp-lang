@@ -40,8 +40,9 @@ fn transform_write(
         ));
     };
     let var_value = mir.variables[index].value.clone();
+    let value_quote = value.quote.clone();
     let mir_value = transform_value(mir, value)?;
-    var_value.write(mir, quote, index, mir_value)?;
+    var_value.write(mir, name, value_quote, mir_value)?;
     mir.variables[index].value = var_value;
     Ok(())
 }

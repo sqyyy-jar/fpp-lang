@@ -1,6 +1,6 @@
 use std::{
     fs::read_to_string,
-    io::{stdout, IsTerminal},
+    io::{stderr, stdout, IsTerminal},
     path::PathBuf,
     process::exit,
     rc::Rc,
@@ -16,7 +16,7 @@ use fpp_compiler::{
 use messages::message::{Message, MessageContent};
 
 fn main() {
-    let terminal = stdout().is_terminal();
+    let terminal = stderr().is_terminal();
     fpp_compiler::init(terminal);
     let matches = command!()
         .subcommand(
