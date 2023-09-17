@@ -2,6 +2,21 @@ use std::{fmt::Debug, ops::Index, rc::Rc};
 
 use crate::error::{Error, Reason, Result};
 
+#[derive(Debug)]
+pub struct Source {
+    pub file: Rc<str>,
+    pub code: Rc<str>,
+}
+
+impl Source {
+    pub fn new(file: impl Into<Rc<str>>, code: impl Into<Rc<str>>) -> Self {
+        Self {
+            file: file.into(),
+            code: code.into(),
+        }
+    }
+}
+
 /// Represents a value associated with a range of text
 #[derive(Clone, Debug)]
 pub struct Q<T> {
@@ -50,8 +65,8 @@ impl Index<&Quote> for str {
     }
 }
 
-pub fn parse_number(source: &Rc<str>, quote: &Quote) -> Result<usize> {
-    source[quote]
+pub fn parse_number(source: &Rc<Source>, quote: &Quote) -> Result<usize> {
+    source.code[quote]
         .parse()
         .map_err(|_| Error::new(source.clone(), quote.clone(), Reason::InvalidNumber))
 }

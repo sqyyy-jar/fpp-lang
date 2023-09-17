@@ -14,7 +14,7 @@ use crate::{
         },
         Hir, HirCallStatement, HirLetStatement, HirStatement, HirWriteStatement,
     },
-    util::{parse_number, Quote, Q},
+    util::{parse_number, Quote, Source, Q},
 };
 
 use self::{
@@ -23,14 +23,14 @@ use self::{
 };
 
 pub struct Parser {
-    source: Rc<str>,
+    source: Rc<Source>,
     lexer: Lexer,
     buffer: Q<Symbol>,
 }
 
 /// General parser functions
 impl Parser {
-    pub fn new(source: Rc<str>) -> Self {
+    pub fn new(source: Rc<Source>) -> Self {
         Self {
             source: source.clone(),
             lexer: Lexer::new(source),
@@ -126,7 +126,7 @@ impl Parser {
         if !prefix.adjacent(&punct) || !punct.adjacent(&q_bit) || bit > 7 {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }
-        let (char, ptr) = self.parse_address_prefix(&self.source[&prefix], start, end)?;
+        let (char, ptr) = self.parse_address_prefix(&self.source.code[&prefix], start, end)?;
         if ptr > u16::MAX as usize {
             return self.error(Reason::InvalidBitAddressSymbol, start, end);
         }

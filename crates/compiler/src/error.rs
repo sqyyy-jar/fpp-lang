@@ -5,18 +5,18 @@ use std::{
 
 use messages::message::{Message, MessageContent};
 
-use crate::util::Quote;
+use crate::util::{Quote, Source};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub struct Error {
-    source: Rc<str>,
+    source: Rc<Source>,
     quote: Quote,
     reason: Reason,
 }
 
 impl Error {
-    pub fn new(source: Rc<str>, quote: Quote, reason: Reason) -> Self {
+    pub fn new(source: Rc<Source>, quote: Quote, reason: Reason) -> Self {
         Self {
             source,
             quote,
@@ -42,8 +42,12 @@ impl Error {
     }
 
     pub fn content(&self) -> Option<MessageContent> {
-        // todo
-        MessageContent::parse("<source>", &self.source, self.quote.start, self.quote.end)
+        MessageContent::parse(
+            &self.source.file,
+            &self.source.code,
+            self.quote.start,
+            self.quote.end,
+        )
     }
 
     pub fn to_message(&self) -> Option<Message> {

@@ -2,7 +2,10 @@ use std::{fmt::Debug, rc::Rc};
 
 use phf::{phf_map, Map};
 
-use crate::{error::Result, util::Quote};
+use crate::{
+    error::Result,
+    util::{Quote, Source},
+};
 
 use self::{
     builtin::{
@@ -43,14 +46,14 @@ pub type MirFunction = fn(&mut Mir, quote: Quote, args: &[MirValue]) -> Result<M
 
 #[derive(Debug)]
 pub struct Mir {
-    pub source: Rc<str>,
+    pub source: Rc<Source>,
     pub allocator: MirAllocator,
     pub variables: Vec<MirVariable>,
     pub actions: Vec<MirAction>,
 }
 
 impl Mir {
-    pub fn new(source: Rc<str>) -> Self {
+    pub fn new(source: Rc<Source>) -> Self {
         Self {
             source,
             allocator: MirAllocator::default(),
@@ -61,7 +64,7 @@ impl Mir {
 
     pub fn find_var(&self, name: &str) -> Option<usize> {
         for (i, var) in self.variables.iter().enumerate() {
-            if name == &self.source[&var.name] {
+            if name == &self.source.code[&var.name] {
                 return Some(i);
             }
         }

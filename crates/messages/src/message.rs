@@ -1,8 +1,9 @@
 use std::fmt::Display;
 
-use yansi::{Color, Style};
-
-use crate::util::{find_line, line_number, pad, write_header, write_message};
+use crate::{
+    util::{find_line, line_number, mark_blue, pad, pad_styled, write_header, write_message},
+    yansi::{Color, Style},
+};
 
 #[derive(Clone, Copy)]
 pub enum MessageType {
@@ -13,13 +14,17 @@ pub enum MessageType {
 }
 
 impl MessageType {
-    pub fn style(self) -> Style {
+    pub fn color(self) -> Color {
         match self {
-            Self::Note => Style::new(Color::Blue).bold(),
-            Self::Success => Style::new(Color::Green).bold(),
-            Self::Warning => Style::new(Color::Yellow).bold(),
-            Self::Error => Style::new(Color::Red).bold(),
+            Self::Note => Color::Blue,
+            Self::Success => Color::Green,
+            Self::Warning => Color::Yellow,
+            Self::Error => Color::Red,
         }
+    }
+
+    pub fn style(self) -> Style {
+        self.color().style().bold()
     }
 
     pub fn text(self) -> &'static str {
@@ -83,22 +88,21 @@ impl<'src> Display for Message<'src> {
                 end_col,
                 line,
             } => {
+                write_message(f, self.r#type, self.message)?;
+                // ---
                 let row = row.to_string();
                 write_header(f, file, &row, start_col, row.len())?;
                 // ---
                 pad(f, row.len(), ' ')?;
-                writeln!(f, " |")?;
+                writeln!(f, " {}", mark_blue('|'))?;
                 // ---
                 f.write_str(&row)?;
-                writeln!(f, " | {line}")?;
+                writeln!(f, " {} {line}", mark_blue('|'))?;
                 // ---
                 pad(f, row.len(), ' ')?;
-                write!(f, " | ")?;
+                write!(f, " {} ", mark_blue('|'))?;
                 pad(f, start_col as usize, ' ')?;
-                pad(f, (end_col - start_col) as usize, '^')?;
-                writeln!(f, "\n")?;
-                // ---
-                write_message(f, self.r#type, self.message)
+                pad_styled(f, (end_col - start_col) as usize, '^', self.r#type.style())
             }
             MessageContent::MultiLine {
                 file,
@@ -109,37 +113,44 @@ impl<'src> Display for Message<'src> {
                 end_col,
                 end_line,
             } => {
+                write_message(f, self.r#type, self.message)?;
+                // ---
                 let start_row = start_row.to_string();
                 let end_row = end_row.to_string();
                 let padding = start_row.len().max(end_row.len());
                 write_header(f, file, &start_row, start_col, padding)?;
                 // ---
                 pad(f, padding, ' ')?;
-                writeln!(f, " |")?;
+                writeln!(f, " {}", mark_blue('|'))?;
                 // ---
                 pad(f, padding - start_row.len(), ' ')?;
-                f.write_str(&start_row)?;
-                writeln!(f, " | {start_line}")?;
+                writeln!(
+                    f,
+                    "{} {} {start_line}",
+                    mark_blue(start_row),
+                    mark_blue('|')
+                )?;
                 // ---
                 pad(f, padding, ' ')?;
-                write!(f, " | ")?;
+                write!(f, " {} ", mark_blue('|'))?;
                 pad(f, start_col as usize, ' ')?;
-                pad(f, start_line.len() - start_col as usize, '^')?;
+                pad_styled(
+                    f,
+                    start_line.len() - start_col as usize,
+                    '^',
+                    self.r#type.style(),
+                )?;
                 writeln!(f)?;
                 // ---
                 pad(f, padding, ' ')?;
-                writeln!(f, " .")?;
+                writeln!(f, " {}", mark_blue('.'))?;
                 // ---
                 pad(f, padding - end_row.len(), ' ')?;
-                f.write_str(&end_row)?;
-                writeln!(f, " | {end_line}")?;
+                writeln!(f, "{} {} {end_line}", mark_blue(end_row), mark_blue('|'))?;
                 // ---
                 pad(f, padding, ' ')?;
-                write!(f, " | ")?;
-                pad(f, end_col as usize, '^')?;
-                writeln!(f, "\n")?;
-                // ---
-                write_message(f, self.r#type, self.message)
+                write!(f, " {} ", mark_blue('|'))?;
+                pad_styled(f, end_col as usize, '^', self.r#type.style())
             }
         }
     }
@@ -168,7 +179,7 @@ pub enum MessageContent<'src> {
 impl<'src> MessageContent<'src> {
     pub fn parse(file: &'src str, src: &'src str, start: usize, end: usize) -> Option<Self> {
         let (start_row_index, start_row) = line_number(src, start);
-        let (end_row_index, end_row) = line_number(src, end);
+        let (end_row_index, end_row) = line_number(src, end - 1);
         if start_row == end_row {
             let line = find_line(src, start_row)?;
             return Some(Self::SingleLine {

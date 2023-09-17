@@ -31,7 +31,7 @@ fn transform_write(
     mir: &mut Mir,
     HirWriteStatement { quote, name, value }: HirWriteStatement,
 ) -> Result<()> {
-    let write_name = &mir.source[&name];
+    let write_name = &mir.source.code[&name];
     let Some(index) = mir.find_var(write_name) else {
         return Err(Error::new(
             mir.source.clone(),
@@ -47,7 +47,7 @@ fn transform_write(
 }
 
 fn transform_call(mir: &mut Mir, call: HirCallStatement) -> Result<()> {
-    let function_name = &mir.source[&call.name];
+    let function_name = &mir.source.code[&call.name];
     let mut value = None;
     if let Some(func) = BUILTIN_FUNCTIONS.get(function_name) {
         let args = transform_values(mir, call.args)?;

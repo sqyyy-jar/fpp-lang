@@ -86,7 +86,7 @@ fn transform_xor(mir: &mut Mir, xor: HirXor) -> Result<MirValue> {
 }
 
 fn transform_var_ref(mir: &mut Mir, quote: Quote) -> Result<MirValue> {
-    let var_name = &mir.source[&quote];
+    let var_name = &mir.source.code[&quote];
     let Some(index) = mir.find_var(var_name) else {
         return Err(Error::new(
             mir.source.clone(),
@@ -98,7 +98,7 @@ fn transform_var_ref(mir: &mut Mir, quote: Quote) -> Result<MirValue> {
 }
 
 fn transform_call(mir: &mut Mir, quote: Quote, call: HirCall) -> Result<MirValue> {
-    let function_name = &mir.source[&call.name];
+    let function_name = &mir.source.code[&call.name];
     if let Some(func) = BUILTIN_FUNCTIONS.get(function_name) {
         let args = transform_values(mir, call.args)?;
         return func(mir, quote, &args);

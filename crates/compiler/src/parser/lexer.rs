@@ -5,21 +5,21 @@ use std::rc::Rc;
 use crate::{
     error::{Error, Reason, Result},
     parser::symbol::{Symbol, KEYWORDS},
-    util::{Quote, Q},
+    util::{Quote, Source, Q},
 };
 
 pub const NULL: char = '\0';
 
 pub struct Lexer {
-    source: Rc<str>,
+    source: Rc<Source>,
     index: usize,
 }
 
 /// General lexer functions
 impl Lexer {
-    pub fn new(source: Rc<str>) -> Self {
+    pub fn new(source: Rc<Source>) -> Self {
         assert!(
-            !source.contains(NULL),
+            !source.code.contains(NULL),
             "Source must not contain a null-character."
         );
         Self { source, index: 0 }
@@ -28,6 +28,7 @@ impl Lexer {
     /// Get the current char
     fn get(&self) -> char {
         self.source
+            .code
             .get(self.index..)
             .and_then(|it| it.chars().next())
             .unwrap_or(NULL)
@@ -36,6 +37,7 @@ impl Lexer {
     /// Get the next char
     fn peek(&self) -> char {
         self.source
+            .code
             .get(self.index + self.get().len_utf8()..)
             .and_then(|it| it.chars().next())
             .unwrap_or(NULL)
@@ -96,7 +98,7 @@ impl Lexer {
         while self.get().is_ascii_digit() {
             self.advance();
         }
-        let slice = &self.source[start_index..self.index];
+        let slice = &self.source.code[start_index..self.index];
         if slice.parse::<usize>().is_err() {
             return self.error(Reason::InvalidNumber, start_index);
         }
@@ -108,7 +110,7 @@ impl Lexer {
         while matches!(self.get(), '_' | 'a'..='z' | 'A'..='Z' | '0'..='9') {
             self.advance();
         }
-        let slice = &self.source[start_index..self.index];
+        let slice = &self.source.code[start_index..self.index];
         if let Some(symbol) = KEYWORDS.get(slice) {
             return self.quote(*symbol, start_index);
         }

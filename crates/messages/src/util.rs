@@ -1,6 +1,11 @@
 use std::fmt::Write;
 
-use crate::message::MessageType;
+use yansi::Style;
+
+use crate::{
+    message::MessageType,
+    yansi::{Color, Paint},
+};
 
 pub fn line_number(src: &str, start: usize) -> (usize, u32) {
     let mut line = 1;
@@ -48,7 +53,7 @@ pub fn write_message(
         out,
         "{}{} {}",
         style.paint(r#type.text()),
-        style.paint(':'),
+        style.paint(':').fg(Color::Default),
         message
     )
 }
@@ -61,7 +66,7 @@ pub fn write_header(
     padding: usize,
 ) -> std::fmt::Result {
     pad(out, padding, ' ')?;
-    writeln!(out, "--> {file}:{row}:{}", start_col + 1)
+    writeln!(out, "{} {file}:{row}:{}", mark_blue("-->"), start_col + 1)
 }
 
 pub fn pad(out: &mut std::fmt::Formatter, amount: usize, c: char) -> std::fmt::Result {
@@ -69,4 +74,20 @@ pub fn pad(out: &mut std::fmt::Formatter, amount: usize, c: char) -> std::fmt::R
         out.write_char(c)?;
     }
     Ok(())
+}
+
+pub fn pad_styled(
+    out: &mut std::fmt::Formatter,
+    amount: usize,
+    c: char,
+    style: Style,
+) -> std::fmt::Result {
+    for _ in 0..amount {
+        write!(out, "{}", style.paint(c))?;
+    }
+    Ok(())
+}
+
+pub fn mark_blue<T>(value: T) -> Paint<T> {
+    Paint::new(value).fg(Color::Blue).bold()
 }

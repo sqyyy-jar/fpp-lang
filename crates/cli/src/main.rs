@@ -3,6 +3,7 @@ use std::{
     io::{stdout, IsTerminal},
     path::PathBuf,
     process::exit,
+    rc::Rc,
 };
 
 use clap::{arg, command, value_parser, Command};
@@ -10,6 +11,7 @@ use fpp_compiler::{
     lir::s7::{self, WriteAwl},
     mir,
     parser::Parser,
+    util::Source,
 };
 use messages::message::{Message, MessageContent};
 
@@ -34,7 +36,8 @@ fn main() {
                 eprintln!("{message}");
                 exit(1);
             }
-            let mut parser = Parser::new(input.unwrap().into());
+            let source = Rc::new(Source::new(file.to_string_lossy(), input.unwrap()));
+            let mut parser = Parser::new(source);
             let hir = parser.parse().unwrap_or_else(|err| {
                 eprintln!("{err}");
                 exit(1);
